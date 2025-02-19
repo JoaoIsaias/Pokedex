@@ -26,55 +26,47 @@ struct PokemonDetailsView: View {
             .padding()
             
             HStack(alignment: .center) {
-                Text("nº: \(String(pokemonData.id))")
+                Text("#\(Int(pokemonData.id).pokemonNumberString())")
                     .font(.title)
                     .fontWeight(.bold)
                     .padding()
                 
-                Text(pokemonData.name ?? "")
+                Text((pokemonData.name ?? "").capitalized)
                     .font(.title)
                     .fontWeight(.bold)
                     .padding()
             }
             
             if let pokemonDetails = pokemonDetails {
-//                LazyVStack {
-//                    ForEach(pokemonDetails.moves.indices, id: \.self) { pokemonMoveIndex in
-//                        HStack {
-//                            Text(pokemonDetails.moves[pokemonMoveIndex].move.name)
-//                                .font(.title3)
-//                            Text(pokemonDetails.moves[pokemonMoveIndex].move.name)
-//                                .font(.title3)
-//                        }
-//                        .padding()
-//                    }
-//                }
+
                 if let pokemonMovesByLevelUpArray = pokemonMovesMap[Constants.MoveLearnMethod.levelUp] {
-//                    GeometryReader { geometryReader in
-                        LazyVGrid(columns: [
-                            GridItem(.flexible(), spacing: 10),
-                            GridItem(.flexible(), spacing: 10)
-                        ]) {
-                            Text("Move")
-                                .font(.caption)
-                                .bold()
+                    Text("Moves Learned by Level Up")
+                        .font(.title2)
+                        .bold()
+                        .padding()
+                    
+                    LazyVGrid(columns: [
+                        GridItem(.flexible(), spacing: 10),
+                        GridItem(.flexible(), spacing: 10)
+                    ]) {
+                        Text("Move")
+                            .font(.title3)
+                            .bold()
+                            .padding()
+                        Text("Learned at level")
+                            .font(.title3)
+                            .bold()
+                            .padding()
+                        ForEach(pokemonMovesByLevelUpArray, id: \.self) { move in
+                            Text(move.trimmingCharacters(in: .decimalDigits).capitalized)
+//                                .font(.caption)
                                 .padding()
-                            Text("Learned at level")
-                                .font(.caption)
-                                .bold()
+                            
+                            Text(String(Int(move.filter { $0.isNumber }) ?? 0))
+//                                .font(.caption)
                                 .padding()
-                            ForEach(pokemonMovesByLevelUpArray, id: \.self) { move in
-                                Text(move.trimmingCharacters(in: .decimalDigits).capitalized)
-                                    .font(.caption)
-                                    .padding()
-                                
-                                Text(String(Int(move.filter { $0.isNumber }) ?? 0))
-                                    .font(.caption)
-                                    .padding()
-                            }
                         }
-//                        .frame(width: geometryReader.size.width)
-//                    }
+                    }
                 }
                 
             } else {
@@ -83,6 +75,8 @@ struct PokemonDetailsView: View {
             
             
         }
+        .navigationTitle(pokemonData.name?.capitalized ?? "")
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             viewModel.loadPokemonDetails(context: viewContext, pokemonDetailsUrl: Constants.pokemonListUrl+String(pokemonData.id)) { pokemon in
                 DispatchQueue.main.async {

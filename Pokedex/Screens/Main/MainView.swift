@@ -42,9 +42,9 @@ struct MainView: View {
                             .padding()
                             
                             VStack(alignment: .leading, spacing: 5) {
-                                Text("nº: \(String(searchPokemonList[pokemonIndex].id))")
+                                Text("#\(Int(searchPokemonList[pokemonIndex].id).pokemonNumberString())")
 //                                .padding()
-                                Text(searchPokemonList[pokemonIndex].name ?? "")
+                                Text((searchPokemonList[pokemonIndex].name ?? "").capitalized)
 //                                .padding()
                             }
                             
@@ -68,8 +68,6 @@ struct MainView: View {
                                 }
                             }
                         }
-                        
-                        
                     }
                 }
             }

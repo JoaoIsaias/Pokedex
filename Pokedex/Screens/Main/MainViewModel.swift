@@ -57,7 +57,7 @@ class MainViewModel: ObservableObject {
                         case .success(let pokemon):
                             if let pokemonData = pokemon {
                                 let newPokemon = PokemonData(context: context)
-                                newPokemon.id = Int64(pokemonData.id)
+                                newPokemon.id = Int32(pokemonData.id)
                                 newPokemon.name = pokemonData.name
                                 newPokemon.image = pokemonData.sprites.frontDefault
                                 
