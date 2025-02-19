@@ -9,9 +9,9 @@ struct PersistenceController {
     static let preview: PersistenceController = {
         let result = PersistenceController(inMemory: true)
         let viewContext = result.container.viewContext
-        for _ in 0..<10 {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
+        for i in 0..<10 {
+            let newPokemon = PokemonData(context: viewContext)
+            newPokemon.id = Int64(i)
         }
         do {
             try viewContext.save()
