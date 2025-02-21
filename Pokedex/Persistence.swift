@@ -11,7 +11,7 @@ struct PersistenceController {
         let viewContext = result.container.viewContext
         for i in 0..<10 {
             let newPokemon = PokemonData(context: viewContext)
-            newPokemon.id = Int64(i)
+            newPokemon.id = Int32(i)
         }
         do {
             try viewContext.save()
