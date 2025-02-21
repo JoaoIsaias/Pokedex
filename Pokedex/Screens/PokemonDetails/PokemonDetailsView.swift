@@ -69,6 +69,20 @@ struct PokemonDetailsView: View {
                     }
                 }
                 
+                if let pokemonMachineMovesArray = pokemonMovesMap[Constants.MoveLearnMethod.machine] {
+                    Text("Moves Learned by TM/HM")
+                        .font(.title2)
+                        .bold()
+                        .padding()
+                    LazyVStack {
+                        ForEach(pokemonMachineMovesArray, id: \.self) { move in
+                            Text(move.capitalized)
+//                                .font(.caption)
+                                .padding()
+                        }
+                    }
+                }
+                
                 if let pokemonTutorMovesArray = pokemonMovesMap[Constants.MoveLearnMethod.tutor] {
                     Text("Tutor Moves")
                         .font(.title2)
@@ -96,11 +110,7 @@ struct PokemonDetailsView: View {
                         }
                     }
                 }
-            } else {
-                Text("TEMP")
             }
-            
-            
         }
         .navigationTitle(pokemonData.name?.capitalized ?? "")
         .navigationBarTitleDisplayMode(.inline)
