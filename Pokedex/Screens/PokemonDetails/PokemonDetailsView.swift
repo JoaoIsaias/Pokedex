@@ -69,6 +69,20 @@ struct PokemonDetailsView: View {
                     }
                 }
                 
+                if let pokemonTutorMovesArray = pokemonMovesMap[Constants.MoveLearnMethod.tutor] {
+                    Text("Tutor Moves")
+                        .font(.title2)
+                        .bold()
+                        .padding()
+                    LazyVStack {
+                        ForEach(pokemonTutorMovesArray, id: \.self) { move in
+                            Text(move.capitalized)
+//                                .font(.caption)
+                                .padding()
+                        }
+                    }
+                }
+                
                 if let pokemonEggMovesArray = pokemonMovesMap[Constants.MoveLearnMethod.egg] {
                     Text("Egg Moves")
                         .font(.title2)
@@ -82,7 +96,6 @@ struct PokemonDetailsView: View {
                         }
                     }
                 }
-                
             } else {
                 Text("TEMP")
             }
