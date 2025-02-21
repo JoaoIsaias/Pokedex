@@ -132,6 +132,7 @@ struct PokemonDetailsView: View {
                     case .success(let fetchedPokemonDetails):
                         pokemonDetails = fetchedPokemonDetails
                         updateMovesMap()
+                        getEvolutionChain()
                     case .failure(let error):
                         print("Failed to load Pokémon: \(error.localizedDescription)")
                     }
@@ -156,8 +157,6 @@ struct PokemonDetailsView: View {
                 pokemonMovesMap[expectedLearnMethod, default: []].append(moveName)
             case .egg, .tutor, .machine:
                 pokemonMovesMap[expectedLearnMethod, default: []].append(move.move.name)
-//            default:
-//                print("Error updating moves: Unrecognized move learn method: \(expectedLearnMethod)")
             }
         }
         
@@ -182,6 +181,20 @@ struct PokemonDetailsView: View {
                 }
             case .egg, .tutor, .machine:
                 pokemonMovesMap[learnMethod]?.sort()
+            }
+        }
+    }
+    
+    func getEvolutionChain() {
+        guard let pokemonDetails = pokemonDetails else { return }
+        viewModel.getEvolutionChain(context: viewContext, pokemonSpeciesUrl: pokemonDetails.species.url) { evolutionChainResult in
+            DispatchQueue.main.async {
+                switch evolutionChainResult {
+                case .success(let evolutionChain):
+                    //TODO: DECIDE HOW TO SAVE/SHOW INFORMATION
+                case .failure(let error):
+                    print("Failed to get evolution chain: \(error.localizedDescription)")
+                }
             }
         }
     }
