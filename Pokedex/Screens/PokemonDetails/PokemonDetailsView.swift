@@ -38,6 +38,17 @@ struct PokemonDetailsView: View {
             }
             
             if let pokemonDetails = pokemonDetails {
+                HStack(alignment: .center) {
+                    ForEach(pokemonDetails.types.indices, id: \.self) { typeIndex in
+                        Image(pokemonDetails.types[typeIndex].type.name)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 30)
+                            .padding()
+                    }
+                        
+                }
+                
 
                 if let pokemonMovesByLevelUpArray = pokemonMovesMap[Constants.MoveLearnMethod.levelUp] {
                     Text("Moves Learned by Level Up")
