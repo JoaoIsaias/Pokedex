@@ -1,6 +1,14 @@
 import SwiftUI
 import CoreData
 
+struct EvolutionNode: Identifiable {
+    let id = UUID()
+    let species: String
+    let evolutionMethod: (Constants.EvolutionTrigger, String)?
+    let evolvesFrom: String?
+    let evolvesTo: [EvolutionNode]
+}
+
 struct PokemonDetailsView: View {
     @Environment(\.managedObjectContext) private var viewContext
     
@@ -12,6 +20,7 @@ struct PokemonDetailsView: View {
     @State var pokemonDetails: Pokemon?
     
     @State var pokemonMovesMap: [Constants.MoveLearnMethod: [String]] = [:]
+    @State var pokemonEvolutionNode: EvolutionNode?
     
     @StateObject private var viewModel = PokemonDetailsViewModel()
     
@@ -49,6 +58,16 @@ struct PokemonDetailsView: View {
                         
                 }
                 
+                if let pokemonEvolutionNode = pokemonEvolutionNode {
+                    GeometryReader { geometry in
+                        EvolutionView(
+                            node: pokemonEvolutionNode,
+                            availableHeight: geometry.size.height
+                        )
+                        .padding()
+                    }
+                    .frame(height: 300)
+                }
 
                 if let pokemonMovesByLevelUpArray = pokemonMovesMap[Constants.MoveLearnMethod.levelUp] {
                     Text("Moves Learned by Level Up")
@@ -191,11 +210,48 @@ struct PokemonDetailsView: View {
             DispatchQueue.main.async {
                 switch evolutionChainResult {
                 case .success(let evolutionChain):
+                    pokemonEvolutionNode = buildEvolutionTree(evolutionChain: evolutionChain.chain)
+                    print(pokemonEvolutionNode)
                     //TODO: DECIDE HOW TO SAVE/SHOW INFORMATION
                 case .failure(let error):
                     print("Failed to get evolution chain: \(error.localizedDescription)")
                 }
             }
         }
+    }
+    
+    func buildEvolutionTree(evolutionChain: EvolutionChainLink, evolvesFrom: String? = nil) -> EvolutionNode {
+        var evolutionMethod: (Constants.EvolutionTrigger, String)? = nil
+        
+        if  let evolutionDetails = evolutionChain.evolutionDetails.first,
+            let evolutionTrigger = Constants.EvolutionTrigger(evolutionDetails.trigger.name) {
+            
+            switch evolutionTrigger {
+            case .levelUp:
+                let minLevel = evolutionDetails.minLevel ?? 0
+                evolutionMethod = (evolutionTrigger, "Level " + String(minLevel))
+            case .useItem:
+                let itemName = evolutionDetails.item?.name ?? ""
+                evolutionMethod = (evolutionTrigger, "Use " + String(itemName))
+            case .trade:
+                var heldItemText = ""
+                if let itemName = evolutionDetails.heldItem?.name {
+                    heldItemText = " w/ " + itemName
+                }
+                evolutionMethod = (evolutionTrigger, "Trade" + heldItemText)
+            default:
+                print("Evolution trigger not yet supported: \(evolutionTrigger)")
+            }
+        }
+        
+        let pokemonName = evolutionChain.species.name
+        let children = evolutionChain.evolvesTo.map { buildEvolutionTree(evolutionChain: $0, evolvesFrom: pokemonName) }
+        
+        return EvolutionNode(
+            species: pokemonName,
+            evolutionMethod: evolutionMethod,
+            evolvesFrom: evolvesFrom,
+            evolvesTo: children
+        )
     }
 }

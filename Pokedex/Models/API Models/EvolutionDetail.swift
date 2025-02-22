@@ -2,8 +2,8 @@ import Foundation
 
 struct EvolutionDetail: Codable {
     let gender: String?
-    let heldItem: String?
-    let item: String?
+    let heldItem: NamedAPIResource?
+    let item: NamedAPIResource?
     let knownMove: String?
     let knownMoveType: String?
     let location: String?
