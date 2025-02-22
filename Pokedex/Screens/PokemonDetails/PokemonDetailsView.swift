@@ -4,6 +4,7 @@ import CoreData
 struct EvolutionNode: Identifiable {
     let id = UUID()
     let species: String
+    let defaultSpriteUrl: String?
     let evolutionMethod: (Constants.EvolutionTrigger, String)?
     let evolvesFrom: String?
     let evolvesTo: [EvolutionNode]
@@ -66,7 +67,7 @@ struct PokemonDetailsView: View {
                         )
                         .padding()
                     }
-                    .frame(height: 300)
+                    .frame(height: UIScreen.main.bounds.height*0.20)
                 }
 
                 if let pokemonMovesByLevelUpArray = pokemonMovesMap[Constants.MoveLearnMethod.levelUp] {
@@ -245,10 +246,15 @@ struct PokemonDetailsView: View {
         }
         
         let pokemonName = evolutionChain.species.name
+        var pokemonSpriteUrl: String? = nil
+        if let pokemonId = evolutionChain.species.url.split(separator: "/").last {
+            pokemonSpriteUrl = Constants.pokemonDefaultSpriteUrl + String(pokemonId) + ".png"
+        }
         let children = evolutionChain.evolvesTo.map { buildEvolutionTree(evolutionChain: $0, evolvesFrom: pokemonName) }
         
         return EvolutionNode(
             species: pokemonName,
+            defaultSpriteUrl: pokemonSpriteUrl,
             evolutionMethod: evolutionMethod,
             evolvesFrom: evolvesFrom,
             evolvesTo: children

@@ -2,6 +2,7 @@ import Foundation
 
 enum Constants {
     static let pokemonListUrl: String = "https://pokeapi.co/api/v2/pokemon/"
+    static let pokemonDefaultSpriteUrl: String = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/"
     
     enum MoveLearnMethod: String {
         case levelUp = "level-up"
