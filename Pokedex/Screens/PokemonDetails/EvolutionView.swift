@@ -17,21 +17,19 @@ struct EvolutionView: View {
         HStack(alignment: .top, spacing: 5) {
             HStack(alignment: .top, spacing: 5) {
                 if let method = node.evolutionMethod {
-                    VStack {
+                    VStack(spacing: 5) {
                         Image(systemName: "arrow.right")
                             .resizable()
-                            .frame(width: 40, height: 10)
-                            .background(RoundedRectangle(cornerRadius: 10).stroke(Color.green, lineWidth: 1))
-                            .padding(.top, topSpacing+spriteSize/2)
+                            .frame(width: 50, height: 10)
+                            .padding(.top, topSpacing+0.8*spriteSize/2)
                         
                         Text("(\(method.1))")
                             .font(.caption2)
                             .foregroundColor(.gray)
-                            .frame(height: textHeight)
+                            .frame(width: 50, height: textHeight)
                         Spacer()
                     }
                     .frame(height: max(0,(maxHeight-(CGFloat(currentNumberOfNodesVertically)-1)*nodesSpacing)/CGFloat(currentNumberOfNodesVertically)))
-                    .background(RoundedRectangle(cornerRadius: 10).stroke(Color.blue, lineWidth: 1))
                 }
                 VStack(alignment: .center, spacing: 5) {
                     AsyncImage(url: URL(string: node.defaultSpriteUrl ?? "")) { result in
@@ -56,12 +54,11 @@ struct EvolutionView: View {
                     .padding(.top, topSpacing)
                     
                     Text(node.species.capitalized)
-                        .font(.subheadline)
+                        .font(.footnote)
                         
                     Spacer()
                 }
                 .frame(height: max(0,(maxHeight-(CGFloat(currentNumberOfNodesVertically)-1)*nodesSpacing)/CGFloat(currentNumberOfNodesVertically)))
-                .background(RoundedRectangle(cornerRadius: 10).stroke(Color.red, lineWidth: 1))
 
             }
             .frame(height: max(0,(maxHeight-(CGFloat(currentNumberOfNodesVertically)-1)*nodesSpacing)/CGFloat(currentNumberOfNodesVertically)))
@@ -82,7 +79,6 @@ struct EvolutionView: View {
         .onAppear {
             calculateSpacing()
         }
-        .background(RoundedRectangle(cornerRadius: 10).stroke(Color.purple, lineWidth: 1))
     }
     
     func calculateSpacing() {

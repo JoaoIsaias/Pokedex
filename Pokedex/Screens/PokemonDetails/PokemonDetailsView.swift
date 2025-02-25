@@ -63,15 +63,17 @@ struct PokemonDetailsView: View {
                 }
                 
                 if let pokemonEvolutionNode = pokemonEvolutionNode {
-//                    GeometryReader { geometry in
+                    Text("Evolution Chain")
+                        .font(.title2)
+                        .bold()
+                        .padding()
+                    
                         EvolutionView(
                             node: pokemonEvolutionNode,
                             maxNumberOfNodesVertically: maxNumberOfNodesInSameLevel,
                             currentNumberOfNodesVertically: 1
                         )
                         .padding()
-//                    }
-//                    .frame(width: UIScreen.main.bounds.width)
                 }
 
                 if let pokemonMovesByLevelUpArray = pokemonMovesMap[Constants.MoveLearnMethod.levelUp] {
@@ -227,6 +229,7 @@ struct PokemonDetailsView: View {
     func buildEvolutionTree(evolutionChain: EvolutionChainLink, evolvesFrom: String? = nil, currentNodeLevel: Int = 1) -> EvolutionNode {
         var evolutionMethod: (Constants.EvolutionTrigger, String)? = nil
         
+        //TODO: ADD THE MISSING EVOLUTION METHOD
         if  let evolutionDetails = evolutionChain.evolutionDetails.first,
             let evolutionTrigger = Constants.EvolutionTrigger(evolutionDetails.trigger.name) {
             
