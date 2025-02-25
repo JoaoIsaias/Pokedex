@@ -21,7 +21,10 @@ struct PokemonDetailsView: View {
     @State var pokemonDetails: Pokemon?
     
     @State var pokemonMovesMap: [Constants.MoveLearnMethod: [String]] = [:]
+    
     @State var pokemonEvolutionNode: EvolutionNode?
+    @State var maxNodeLevel: Int = 1
+    @State var maxNumberOfNodesInSameLevel: Int = 1
     
     @StateObject private var viewModel = PokemonDetailsViewModel()
     
@@ -60,14 +63,15 @@ struct PokemonDetailsView: View {
                 }
                 
                 if let pokemonEvolutionNode = pokemonEvolutionNode {
-                    GeometryReader { geometry in
+//                    GeometryReader { geometry in
                         EvolutionView(
                             node: pokemonEvolutionNode,
-                            availableHeight: geometry.size.height
+                            maxNumberOfNodesVertically: maxNumberOfNodesInSameLevel,
+                            currentNumberOfNodesVertically: 1
                         )
                         .padding()
-                    }
-                    .frame(height: UIScreen.main.bounds.height*0.20)
+//                    }
+//                    .frame(width: UIScreen.main.bounds.width)
                 }
 
                 if let pokemonMovesByLevelUpArray = pokemonMovesMap[Constants.MoveLearnMethod.levelUp] {
@@ -212,7 +216,6 @@ struct PokemonDetailsView: View {
                 switch evolutionChainResult {
                 case .success(let evolutionChain):
                     pokemonEvolutionNode = buildEvolutionTree(evolutionChain: evolutionChain.chain)
-                    print(pokemonEvolutionNode)
                     //TODO: DECIDE HOW TO SAVE/SHOW INFORMATION
                 case .failure(let error):
                     print("Failed to get evolution chain: \(error.localizedDescription)")
@@ -221,7 +224,7 @@ struct PokemonDetailsView: View {
         }
     }
     
-    func buildEvolutionTree(evolutionChain: EvolutionChainLink, evolvesFrom: String? = nil) -> EvolutionNode {
+    func buildEvolutionTree(evolutionChain: EvolutionChainLink, evolvesFrom: String? = nil, currentNodeLevel: Int = 1) -> EvolutionNode {
         var evolutionMethod: (Constants.EvolutionTrigger, String)? = nil
         
         if  let evolutionDetails = evolutionChain.evolutionDetails.first,
@@ -250,7 +253,13 @@ struct PokemonDetailsView: View {
         if let pokemonId = evolutionChain.species.url.split(separator: "/").last {
             pokemonSpriteUrl = Constants.pokemonDefaultSpriteUrl + String(pokemonId) + ".png"
         }
-        let children = evolutionChain.evolvesTo.map { buildEvolutionTree(evolutionChain: $0, evolvesFrom: pokemonName) }
+        let children = evolutionChain.evolvesTo.map { buildEvolutionTree(evolutionChain: $0, evolvesFrom: pokemonName, currentNodeLevel: currentNodeLevel+1) }
+        
+        if children.isEmpty {
+            maxNodeLevel = max(maxNodeLevel, currentNodeLevel)
+        } else {
+            maxNumberOfNodesInSameLevel = max(maxNumberOfNodesInSameLevel, children.count)
+        }
         
         return EvolutionNode(
             species: pokemonName,
