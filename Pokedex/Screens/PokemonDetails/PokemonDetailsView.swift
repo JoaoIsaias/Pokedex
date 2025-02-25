@@ -1,6 +1,15 @@
 import SwiftUI
 import CoreData
 
+struct EvolutionNode: Identifiable {
+    let id = UUID()
+    let species: String
+    let defaultSpriteUrl: String?
+    let evolutionMethod: (Constants.EvolutionTrigger, String)?
+    let evolvesFrom: String?
+    let evolvesTo: [EvolutionNode]
+}
+
 struct PokemonDetailsView: View {
     @Environment(\.managedObjectContext) private var viewContext
     
@@ -12,6 +21,10 @@ struct PokemonDetailsView: View {
     @State var pokemonDetails: Pokemon?
     
     @State var pokemonMovesMap: [Constants.MoveLearnMethod: [String]] = [:]
+    
+    @State var pokemonEvolutionNode: EvolutionNode?
+    @State var maxNodeLevel: Int = 1
+    @State var maxNumberOfNodesInSameLevel: Int = 1
     
     @StateObject private var viewModel = PokemonDetailsViewModel()
     
@@ -49,6 +62,19 @@ struct PokemonDetailsView: View {
                         
                 }
                 
+                if let pokemonEvolutionNode = pokemonEvolutionNode {
+                    Text("Evolution Chain")
+                        .font(.title2)
+                        .bold()
+                        .padding()
+                    
+                        EvolutionView(
+                            node: pokemonEvolutionNode,
+                            maxNumberOfNodesVertically: maxNumberOfNodesInSameLevel,
+                            currentNumberOfNodesVertically: 1
+                        )
+                        .padding()
+                }
 
                 if let pokemonMovesByLevelUpArray = pokemonMovesMap[Constants.MoveLearnMethod.levelUp] {
                     Text("Moves Learned by Level Up")
@@ -132,6 +158,7 @@ struct PokemonDetailsView: View {
                     case .success(let fetchedPokemonDetails):
                         pokemonDetails = fetchedPokemonDetails
                         updateMovesMap()
+                        getEvolutionChain()
                     case .failure(let error):
                         print("Failed to load Pokémon: \(error.localizedDescription)")
                     }
@@ -156,8 +183,6 @@ struct PokemonDetailsView: View {
                 pokemonMovesMap[expectedLearnMethod, default: []].append(moveName)
             case .egg, .tutor, .machine:
                 pokemonMovesMap[expectedLearnMethod, default: []].append(move.move.name)
-//            default:
-//                print("Error updating moves: Unrecognized move learn method: \(expectedLearnMethod)")
             }
         }
         
@@ -184,5 +209,67 @@ struct PokemonDetailsView: View {
                 pokemonMovesMap[learnMethod]?.sort()
             }
         }
+    }
+    
+    func getEvolutionChain() {
+        guard let pokemonDetails = pokemonDetails else { return }
+        viewModel.getEvolutionChain(context: viewContext, pokemonSpeciesUrl: pokemonDetails.species.url) { evolutionChainResult in
+            DispatchQueue.main.async {
+                switch evolutionChainResult {
+                case .success(let evolutionChain):
+                    pokemonEvolutionNode = buildEvolutionTree(evolutionChain: evolutionChain.chain)
+                    //TODO: DECIDE HOW TO SAVE/SHOW INFORMATION
+                case .failure(let error):
+                    print("Failed to get evolution chain: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+    
+    func buildEvolutionTree(evolutionChain: EvolutionChainLink, evolvesFrom: String? = nil, currentNodeLevel: Int = 1) -> EvolutionNode {
+        var evolutionMethod: (Constants.EvolutionTrigger, String)? = nil
+        
+        //TODO: ADD THE MISSING EVOLUTION METHOD
+        if  let evolutionDetails = evolutionChain.evolutionDetails.first,
+            let evolutionTrigger = Constants.EvolutionTrigger(evolutionDetails.trigger.name) {
+            
+            switch evolutionTrigger {
+            case .levelUp:
+                let minLevel = evolutionDetails.minLevel ?? 0
+                evolutionMethod = (evolutionTrigger, "Level " + String(minLevel))
+            case .useItem:
+                let itemName = evolutionDetails.item?.name ?? ""
+                evolutionMethod = (evolutionTrigger, "Use " + String(itemName))
+            case .trade:
+                var heldItemText = ""
+                if let itemName = evolutionDetails.heldItem?.name {
+                    heldItemText = " w/ " + itemName
+                }
+                evolutionMethod = (evolutionTrigger, "Trade" + heldItemText)
+            default:
+                print("Evolution trigger not yet supported: \(evolutionTrigger)")
+            }
+        }
+        
+        let pokemonName = evolutionChain.species.name
+        var pokemonSpriteUrl: String? = nil
+        if let pokemonId = evolutionChain.species.url.split(separator: "/").last {
+            pokemonSpriteUrl = Constants.pokemonDefaultSpriteUrl + String(pokemonId) + ".png"
+        }
+        let children = evolutionChain.evolvesTo.map { buildEvolutionTree(evolutionChain: $0, evolvesFrom: pokemonName, currentNodeLevel: currentNodeLevel+1) }
+        
+        if children.isEmpty {
+            maxNodeLevel = max(maxNodeLevel, currentNodeLevel)
+        } else {
+            maxNumberOfNodesInSameLevel = max(maxNumberOfNodesInSameLevel, children.count)
+        }
+        
+        return EvolutionNode(
+            species: pokemonName,
+            defaultSpriteUrl: pokemonSpriteUrl,
+            evolutionMethod: evolutionMethod,
+            evolvesFrom: evolvesFrom,
+            evolvesTo: children
+        )
     }
 }
