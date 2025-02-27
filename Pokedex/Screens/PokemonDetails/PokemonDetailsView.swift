@@ -17,7 +17,9 @@ struct PokemonDetailsView: View {
     //        sortDescriptors: [NSSortDescriptor(keyPath: \Pokemon.name, ascending: true)],
     //        animation: .default)
     //    private var pokemonList: FetchedResults<Item>
-    @State var pokemonData: PokemonData
+    let pokemonId: Int
+    
+    @State var pokemonData: PokemonData?
     @State var pokemonDetails: Pokemon?
     
     @State var pokemonMovesMap: [Constants.MoveLearnMethod: [String]] = [:]
@@ -30,7 +32,7 @@ struct PokemonDetailsView: View {
     
     var body: some View {
         ScrollView{
-            AsyncImage(url: URL(string: pokemonData.image ?? "")){ result in
+            AsyncImage(url: URL(string: pokemonData?.image ?? "")){ result in
                 result.image?
                     .resizable()
                     .scaledToFill()
@@ -39,12 +41,12 @@ struct PokemonDetailsView: View {
             .padding()
             
             HStack(alignment: .center) {
-                Text("#\(Int(pokemonData.id).pokemonNumberString())")
+                Text("#\(pokemonId.pokemonNumberString())")
                     .font(.title)
                     .fontWeight(.bold)
                     .padding()
                 
-                Text((pokemonData.name ?? "").capitalized)
+                Text((pokemonData?.name ?? "").capitalized)
                     .font(.title)
                     .fontWeight(.bold)
                     .padding()
@@ -68,12 +70,13 @@ struct PokemonDetailsView: View {
                         .bold()
                         .padding()
                     
-                        EvolutionView(
-                            node: pokemonEvolutionNode,
-                            maxNumberOfNodesVertically: maxNumberOfNodesInSameLevel,
-                            currentNumberOfNodesVertically: 1
-                        )
-                        .padding()
+                    EvolutionView(
+                        pokemonDetailsId: pokemonId,
+                        node: pokemonEvolutionNode,
+                        maxNumberOfNodesVertically: maxNumberOfNodesInSameLevel,
+                        currentNumberOfNodesVertically: 1
+                    )
+                    .padding()
                 }
 
                 if let pokemonMovesByLevelUpArray = pokemonMovesMap[Constants.MoveLearnMethod.levelUp] {
@@ -149,20 +152,43 @@ struct PokemonDetailsView: View {
                 }
             }
         }
-        .navigationTitle(pokemonData.name?.capitalized ?? "")
+        .navigationTitle(pokemonData?.name?.capitalized ?? "")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            viewModel.loadPokemonDetails(context: viewContext, pokemonDetailsUrl: Constants.pokemonListUrl+String(pokemonData.id)) { pokemon in
-                DispatchQueue.main.async {
-                    switch pokemon {
-                    case .success(let fetchedPokemonDetails):
-                        pokemonDetails = fetchedPokemonDetails
-                        updateMovesMap()
-                        getEvolutionChain()
-                    case .failure(let error):
-                        print("Failed to load Pokémon: \(error.localizedDescription)")
+            if pokemonData == nil {
+                viewModel
+                    .fetchPokemonData(
+                        context: viewContext,
+                        pokemonId: pokemonId
+                    ) { pokemonDataResult in
+                        DispatchQueue.main.async {
+                            switch pokemonDataResult {
+                            case .success(let fetchedPokemonData):
+                                pokemonData = fetchedPokemonData
+                            case .failure(let error):
+                                print("Failed to fetch PokemonData on CoreData: \(error.localizedDescription)")
+                            }
+                        }
+                        
                     }
-                }
+            }
+            if pokemonDetails == nil {
+                viewModel
+                    .loadPokemonDetails(
+                        context: viewContext,
+                        pokemonDetailsUrl: Constants.pokemonListUrl+String(pokemonId)
+                    ) { pokemon in
+                        DispatchQueue.main.async {
+                            switch pokemon {
+                            case .success(let fetchedPokemonDetails):
+                                pokemonDetails = fetchedPokemonDetails
+                                updateMovesMap()
+                                getEvolutionChain()
+                            case .failure(let error):
+                                print("Failed to load Pokémon: \(error.localizedDescription)")
+                            }
+                        }
+                    }
             }
         }
 //        NavigationStack {
@@ -272,4 +298,8 @@ struct PokemonDetailsView: View {
             evolvesTo: children
         )
     }
+}
+
+#Preview {
+    PokemonDetailsView(pokemonId: 1).environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
 }

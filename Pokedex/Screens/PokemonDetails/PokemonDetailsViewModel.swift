@@ -7,6 +7,25 @@ class PokemonDetailsViewModel: ObservableObject {
     init() {
         self.apiClient = APIClient()
     }
+    
+    func fetchPokemonData(context: NSManagedObjectContext, pokemonId: Int, completion: @escaping (Result<PokemonData, Error>) -> Void) {
+        let fetchRequest: NSFetchRequest<PokemonData> = PokemonData.fetchRequest()
+        fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \PokemonData.id, ascending: true)]
+        fetchRequest.predicate = NSPredicate(format: "id == %d", pokemonId)
+        do {
+            let coreDataPokemonList = try context.fetch(fetchRequest)
+            if !coreDataPokemonList.isEmpty,
+               let fetchedPokemon = coreDataPokemonList.first {
+                completion(.success(fetchedPokemon))
+                return
+            }
+        } catch {
+            print("Failed to fetch Pokemon with id #\(pokemonId) on CoreData: \(error.localizedDescription)")
+            completion(.failure(error))
+            return
+        }
+    }
+    
     func loadPokemonDetails(context: NSManagedObjectContext, pokemonDetailsUrl: String, completion: @escaping (Result<Pokemon, Error>) -> Void) {
         apiClient.request(pokemonDetailsUrl, method: .get, parameters: nil) {
             [weak self] (result: Result<Pokemon?, Error>) in
