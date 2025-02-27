@@ -1,7 +1,7 @@
 import Foundation
 
 struct EvolutionDetail: Codable {
-    let gender: String?
+    let gender: Int?
     let heldItem: NamedAPIResource?
     let item: NamedAPIResource?
     let knownMove: String?

@@ -28,6 +28,10 @@ struct PokemonDetailsView: View {
     @State var maxNodeLevel: Int = 1
     @State var maxNumberOfNodesInSameLevel: Int = 1
     
+    @State private var showMoveModal = false
+    @State private var moveClicked: String?
+    //TODO: FIX moveclicked not working first time + FIX CHATGPT MOVE STRUCTS
+    
     @StateObject private var viewModel = PokemonDetailsViewModel()
     
     var body: some View {
@@ -116,9 +120,14 @@ struct PokemonDetailsView: View {
                         .padding()
                     LazyVStack {
                         ForEach(pokemonMachineMovesArray, id: \.self) { move in
-                            Text(move.capitalized)
-//                                .font(.caption)
-                                .padding()
+                            Button {
+                                moveClicked = move
+                                showMoveModal.toggle()
+                            } label: {
+                                Text(move.capitalized)
+                            }
+                            .padding()
+                            
                         }
                     }
                 }
@@ -191,9 +200,9 @@ struct PokemonDetailsView: View {
                     }
             }
         }
-//        NavigationStack {
-//
-//        }
+        .sheet(isPresented: $showMoveModal) {
+            MovesDetailsView(moveName: moveClicked ?? "Pound")
+        }
         
     }
     
