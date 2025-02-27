@@ -30,7 +30,7 @@ struct MainView: View {
             List {
                 ForEach(searchPokemonList.indices, id: \.self) { pokemonIndex in
                     NavigationLink {
-                        PokemonDetailsView(pokemonData: searchPokemonList[pokemonIndex])
+                        PokemonDetailsView(pokemonId: Int(searchPokemonList[pokemonIndex].id))
                     } label: {
                         HStack(alignment: .center) {
                             AsyncImage(url: URL(string: searchPokemonList[pokemonIndex].image ?? "")){ result in
