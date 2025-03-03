@@ -72,6 +72,7 @@ struct MainView: View {
                 }
             }
             .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always))
+            .listStyle(PlainListStyle())
             .onChange(of: searchText) {
                 if searchText.isEmpty {
                     searchPokemonList = pokemonList
@@ -143,7 +144,6 @@ struct MainView: View {
                 ProgressView()
                     .padding()
             }
-            Text("Select an item")
         }
     }
 //
