@@ -7,21 +7,21 @@ struct Move: Codable {
     let accuracy: Int?
     let effectChance: Int?
     let pp: Int
-    let priority: Int
+    let priority: Int?
     let power: Int?
-    let contestCombos: ContestCombos
-    let contestType: NamedAPIResource
-    let contestEffect: APIResource
-    let damageClass: NamedAPIResource
+    let contestCombos: ContestCombos?
+    let contestType: NamedAPIResource?
+    let contestEffect: APIResource?
+    let damageClass: NamedAPIResource?
     let effectEntries: [EffectEntry]
-    let generation: NamedAPIResource
-    let meta: Meta
+    let generation: NamedAPIResource?
+    let meta: Meta?
     let names: [Name]
     let pastValues: [PastMoveStatValues]
     let statChanges: [StatChange]
-    let superContestEffect: NamedAPIResource
-    let target: NamedAPIResource
-    let type: NamedAPIResource
+    let superContestEffect: APIResource?
+    let target: NamedAPIResource?
+    let type: NamedAPIResource?
     let learnedByPokemon: [NamedAPIResource]
     let flavorTextEntries: [FlavorTextEntry]
 

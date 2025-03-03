@@ -10,6 +10,12 @@ struct EvolutionNode: Identifiable {
     let evolvesTo: [EvolutionNode]
 }
 
+//Wrapper to enable move to be used on sheet
+struct MoveWrapper: Identifiable {
+    let id = UUID()
+    let name: String
+}
+
 struct PokemonDetailsView: View {
     @Environment(\.managedObjectContext) private var viewContext
     
@@ -28,8 +34,9 @@ struct PokemonDetailsView: View {
     @State var maxNodeLevel: Int = 1
     @State var maxNumberOfNodesInSameLevel: Int = 1
     
-    @State private var showMoveModal = false
-    @State private var moveClicked: String?
+    @State private var croppedImage: UIImage? = nil
+    
+    @State private var moveClicked: MoveWrapper?
     //TODO: FIX moveclicked not working first time + FIX CHATGPT MOVE STRUCTS
     
     @StateObject private var viewModel = PokemonDetailsViewModel()
@@ -102,12 +109,14 @@ struct PokemonDetailsView: View {
                             .bold()
                             .padding()
                         ForEach(pokemonMovesByLevelUpArray, id: \.self) { move in
-                            Text(move.trimmingCharacters(in: .decimalDigits).capitalized)
-//                                .font(.caption)
-                                .padding()
+                            Button {
+                                moveClicked = MoveWrapper(name: move.trimmingCharacters(in: .decimalDigits).capitalized)
+                            } label: {
+                                Text(move.trimmingCharacters(in: .decimalDigits).capitalized)
+                            }
+                            .padding()
                             
                             Text(String(Int(move.filter { $0.isNumber }) ?? 0))
-//                                .font(.caption)
                                 .padding()
                         }
                     }
@@ -121,8 +130,7 @@ struct PokemonDetailsView: View {
                     LazyVStack {
                         ForEach(pokemonMachineMovesArray, id: \.self) { move in
                             Button {
-                                moveClicked = move
-                                showMoveModal.toggle()
+                                moveClicked = MoveWrapper(name: move)
                             } label: {
                                 Text(move.capitalized)
                             }
@@ -139,9 +147,12 @@ struct PokemonDetailsView: View {
                         .padding()
                     LazyVStack {
                         ForEach(pokemonTutorMovesArray, id: \.self) { move in
-                            Text(move.capitalized)
-//                                .font(.caption)
-                                .padding()
+                            Button {
+                                moveClicked = MoveWrapper(name: move)
+                            } label: {
+                                Text(move.capitalized)
+                            }
+                            .padding()
                         }
                     }
                 }
@@ -153,9 +164,12 @@ struct PokemonDetailsView: View {
                         .padding()
                     LazyVStack {
                         ForEach(pokemonEggMovesArray, id: \.self) { move in
-                            Text(move.capitalized)
-//                                .font(.caption)
-                                .padding()
+                            Button {
+                                moveClicked = MoveWrapper(name: move)
+                            } label: {
+                                Text(move.capitalized)
+                            }
+                            .padding()
                         }
                     }
                 }
@@ -200,8 +214,8 @@ struct PokemonDetailsView: View {
                     }
             }
         }
-        .sheet(isPresented: $showMoveModal) {
-            MovesDetailsView(moveName: moveClicked ?? "Pound")
+        .sheet(item: $moveClicked) { move in
+            MovesDetailsView(moveName: move.name)
         }
         
     }
