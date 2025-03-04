@@ -199,7 +199,7 @@ struct PokemonDetailsView: View {
                 viewModel
                     .loadPokemonDetails(
                         context: viewContext,
-                        pokemonDetailsUrl: Constants.pokemonListUrl+String(pokemonId)
+                        pokemonDetailsUrl: Constants.pokemonDetailsDefaultUrl+String(pokemonId)
                     ) { pokemon in
                         DispatchQueue.main.async {
                             switch pokemon {

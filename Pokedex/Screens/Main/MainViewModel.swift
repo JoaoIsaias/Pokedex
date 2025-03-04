@@ -10,7 +10,7 @@ class MainViewModel: ObservableObject {
         self.apiClient = APIClient()
     }
     
-    func loadInitialPokemonList(context: NSManagedObjectContext, completion: @escaping (Result<[PokemonData], Error>) -> Void) {
+    func loadPokemonList(context: NSManagedObjectContext, completion: @escaping (Result<[PokemonData], Error>) -> Void) {
         let fetchRequest: NSFetchRequest<PokemonData> = PokemonData.fetchRequest()
         fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \PokemonData.id, ascending: true)]
         do {
@@ -26,15 +26,6 @@ class MainViewModel: ObservableObject {
             print("Failed to fetch Pokemon List on CoreData: \(error.localizedDescription)")
             completion(.failure(error))
             return
-        }
-    }
-    
-    func loadMorePokemonList(context: NSManagedObjectContext, pokemonListLength: Int = 0, completion: @escaping (Result<[PokemonData], Error>) -> Void) {
-        if let nextUrl = nextUrl {
-            fetchPokemonList(context: context, url: nextUrl, completion: completion)
-        } else {
-            let newUrl = "https://pokeapi.co/api/v2/pokemon?offset=\(String(pokemonListLength))&limit=20"
-            fetchPokemonList(context: context, url: newUrl, completion: completion)
         }
     }
     
@@ -57,7 +48,7 @@ class MainViewModel: ObservableObject {
                         case .success(let pokemon):
                             if let pokemonData = pokemon {
                                 let newPokemon = PokemonData(context: context)
-                                newPokemon.id = Int32(pokemonData.id)
+                                newPokemon.id = Int16(pokemonData.id)
                                 newPokemon.name = pokemonData.name
                                 newPokemon.image = pokemonData.sprites.frontDefault
                                 

@@ -78,6 +78,11 @@ struct MovesDetailsView: View {
                     .padding()
                 
                 //TODO: Add Pokemon List that learn this move
+                
+                Text("Pokemon that learn this move:")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .padding()
             }
         }
         .onAppear {
