@@ -8,19 +8,22 @@ class MovesDetailsViewModel: ObservableObject {
         self.apiClient = APIClient()
     }
     
-    func loadMovesDetails(context: NSManagedObjectContext, moveDetailsUrl: String, completion: @escaping (Result<Move, Error>) -> Void) {
-        apiClient.request(moveDetailsUrl, method: .get, parameters: nil) {
-            [weak self] (result: Result<Move?, Error>) in
-//            guard let self = self else { return }
-            switch result {
-            case .success(let move):
-                guard let move = move else { return }
-                completion(.success(move))
-            case .failure(let error):
-                print("Error obtaining move details: \(error)")
-                completion(.failure(error))
-                
-            }
+    func loadMovesDetails(context: NSManagedObjectContext, moveDetailsUrl: String) async throws -> Move {
+        let move: Move? = try await apiClient.request(moveDetailsUrl, method: .get, parameters: nil)
+        guard let move = move else { throw NSError(domain: "No move data", code: -1) }
+        return move
+    }
+    
+    func fetchPokemonList(context: NSManagedObjectContext, pokemonNames: [String]) async throws -> [PokemonData] {
+        let fetchRequest: NSFetchRequest<PokemonData> = PokemonData.fetchRequest()
+        fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \PokemonData.id, ascending: true)]
+        fetchRequest.predicate = NSPredicate(format: "name IN %@", pokemonNames)
+        
+        do {
+            return try context.fetch(fetchRequest)
+        } catch {
+            print("Failed to fetch Pokémon list from CoreData: \(error.localizedDescription)")
+            throw error
         }
     }
 }

@@ -10,7 +10,6 @@ struct EvolutionNode: Identifiable {
     let evolvesTo: [EvolutionNode]
 }
 
-//Wrapper to enable move to be used on sheet
 struct MoveWrapper: Identifiable {
     let id = UUID()
     let name: String
@@ -19,10 +18,6 @@ struct MoveWrapper: Identifiable {
 struct PokemonDetailsView: View {
     @Environment(\.managedObjectContext) private var viewContext
     
-    //    @FetchRequest(
-    //        sortDescriptors: [NSSortDescriptor(keyPath: \Pokemon.name, ascending: true)],
-    //        animation: .default)
-    //    private var pokemonList: FetchedResults<Item>
     let pokemonId: Int
     
     @State var pokemonData: PokemonData?
@@ -37,18 +32,17 @@ struct PokemonDetailsView: View {
     @State private var croppedImage: UIImage? = nil
     
     @State private var moveClicked: MoveWrapper?
-    //TODO: FIX moveclicked not working first time + FIX CHATGPT MOVE STRUCTS
     
     @StateObject private var viewModel = PokemonDetailsViewModel()
     
     var body: some View {
-        ScrollView{
-            AsyncImage(url: URL(string: pokemonData?.image ?? "")){ result in
+        ScrollView {
+            AsyncImage(url: URL(string: pokemonData?.image ?? "")) { result in
                 result.image?
                     .resizable()
                     .scaledToFill()
             }
-            .frame(width: UIScreen.main.bounds.width*0.8, height: UIScreen.main.bounds.width*0.8)
+            .frame(width: UIScreen.main.bounds.width * 0.8, height: UIScreen.main.bounds.width * 0.8)
             .padding()
             
             HStack(alignment: .center) {
@@ -72,7 +66,6 @@ struct PokemonDetailsView: View {
                             .frame(height: 30)
                             .padding()
                     }
-                        
                 }
                 
                 if let pokemonEvolutionNode = pokemonEvolutionNode {
@@ -135,7 +128,6 @@ struct PokemonDetailsView: View {
                                 Text(move.capitalized)
                             }
                             .padding()
-                            
                         }
                     }
                 }
@@ -178,49 +170,44 @@ struct PokemonDetailsView: View {
         .navigationTitle(pokemonData?.name?.capitalized ?? "")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            if pokemonData == nil {
-                viewModel
-                    .fetchPokemonData(
-                        context: viewContext,
-                        pokemonId: pokemonId
-                    ) { pokemonDataResult in
-                        DispatchQueue.main.async {
-                            switch pokemonDataResult {
-                            case .success(let fetchedPokemonData):
-                                pokemonData = fetchedPokemonData
-                            case .failure(let error):
-                                print("Failed to fetch PokemonData on CoreData: \(error.localizedDescription)")
-                            }
-                        }
-                        
-                    }
-            }
-            if pokemonDetails == nil {
-                viewModel
-                    .loadPokemonDetails(
-                        context: viewContext,
-                        pokemonDetailsUrl: Constants.pokemonDetailsDefaultUrl+String(pokemonId)
-                    ) { pokemon in
-                        DispatchQueue.main.async {
-                            switch pokemon {
-                            case .success(let fetchedPokemonDetails):
-                                pokemonDetails = fetchedPokemonDetails
-                                updateMovesMap()
-                                getEvolutionChain()
-                            case .failure(let error):
-                                print("Failed to load Pokémon: \(error.localizedDescription)")
-                            }
-                        }
-                    }
+            Task {
+                if pokemonData == nil {
+                    await loadPokemonData()
+                }
+                if pokemonDetails == nil {
+                    await loadPokemonDetails()
+                }
             }
         }
         .sheet(item: $moveClicked) { move in
             MovesDetailsView(moveName: move.name)
         }
-        
     }
     
-    func updateMovesMap() {
+    // Load Pokemon Data from CoreData
+    func loadPokemonData() async {
+        do {
+            let pokemonDataResult = try await viewModel.fetchPokemonData(context: viewContext, pokemonId: pokemonId)
+                pokemonData = pokemonDataResult
+        } catch {
+            print("Failed to fetch PokemonData on CoreData: \(error.localizedDescription)")
+        }
+    }
+    
+    // Load Pokemon Details and handle evolution chain
+    func loadPokemonDetails() async {
+        do {
+            let pokemonDetailsResult = try await viewModel.loadPokemonDetails(context: viewContext, pokemonDetailsUrl: Constants.pokemonDetailsDefaultUrl + String(pokemonId))
+            pokemonDetails = pokemonDetailsResult
+            await updateMovesMap()
+            await getEvolutionChain()
+        } catch {
+            print("Failed to load Pokémon details: \(error.localizedDescription)")
+        }
+    }
+    
+    // Update the moves map
+    func updateMovesMap() async {
         guard let pokemonDetails = pokemonDetails else { return }
         
         for move in pokemonDetails.moves {
@@ -235,7 +222,6 @@ struct PokemonDetailsView: View {
             }
         }
         
-        
         for learnMethod in pokemonMovesMap.keys {
             switch learnMethod {
             case .levelUp:
@@ -243,7 +229,6 @@ struct PokemonDetailsView: View {
                     // Extracting the number part
                     let numberPart1 = Int($0.filter { $0.isNumber }) ?? 0
                     let numberPart2 = Int($1.filter { $0.isNumber }) ?? 0
-                    
                     
                     // Extracting the text part
                     let textPart1 = $0.replacingOccurrences(of: String(numberPart1), with: "")
@@ -260,27 +245,27 @@ struct PokemonDetailsView: View {
         }
     }
     
-    func getEvolutionChain() {
+    // Fetch evolution chain
+    func getEvolutionChain() async {
         guard let pokemonDetails = pokemonDetails else { return }
-        viewModel.getEvolutionChain(context: viewContext, pokemonSpeciesUrl: pokemonDetails.species.url) { evolutionChainResult in
-            DispatchQueue.main.async {
-                switch evolutionChainResult {
-                case .success(let evolutionChain):
-                    pokemonEvolutionNode = buildEvolutionTree(evolutionChain: evolutionChain.chain)
-                    //TODO: DECIDE HOW TO SAVE/SHOW INFORMATION
-                case .failure(let error):
-                    print("Failed to get evolution chain: \(error.localizedDescription)")
-                }
-            }
+        
+        do {
+            // Fetch the evolution chain asynchronously
+            let evolutionChain = try await viewModel.getEvolutionChain(context: viewContext, pokemonSpeciesUrl: pokemonDetails.species.url)
+            pokemonEvolutionNode = await buildEvolutionTree(evolutionChain: evolutionChain.chain)
+            //TODO: DECIDE HOW TO SAVE/SHOW INFORMATION
+        } catch {
+            print("Failed to get evolution chain: \(error.localizedDescription)")
         }
     }
     
-    func buildEvolutionTree(evolutionChain: EvolutionChainLink, evolvesFrom: String? = nil, currentNodeLevel: Int = 1) -> EvolutionNode {
+    // Build evolution tree
+    func buildEvolutionTree(evolutionChain: EvolutionChainLink, evolvesFrom: String? = nil, currentNodeLevel: Int = 1) async -> EvolutionNode {
         var evolutionMethod: (Constants.EvolutionTrigger, String)? = nil
         
-        //TODO: ADD THE MISSING EVOLUTION METHOD
-        if  let evolutionDetails = evolutionChain.evolutionDetails.first,
-            let evolutionTrigger = Constants.EvolutionTrigger(evolutionDetails.trigger.name) {
+        // TODO: Add the missing evolution method
+        if let evolutionDetails = evolutionChain.evolutionDetails.first,
+           let evolutionTrigger = Constants.EvolutionTrigger(evolutionDetails.trigger.name) {
             
             switch evolutionTrigger {
             case .levelUp:
@@ -305,7 +290,20 @@ struct PokemonDetailsView: View {
         if let pokemonId = evolutionChain.species.url.split(separator: "/").last {
             pokemonSpriteUrl = Constants.pokemonDefaultSpriteUrl + String(pokemonId) + ".png"
         }
-        let children = evolutionChain.evolvesTo.map { buildEvolutionTree(evolutionChain: $0, evolvesFrom: pokemonName, currentNodeLevel: currentNodeLevel+1) }
+        
+        let children = await withTaskGroup(of: EvolutionNode.self) { group in
+            for childChain in evolutionChain.evolvesTo {
+                group.async {
+                    await buildEvolutionTree(evolutionChain: childChain, evolvesFrom: pokemonName, currentNodeLevel: currentNodeLevel + 1)
+                }
+            }
+            
+            var childNodes: [EvolutionNode] = []
+            for await child in group {
+                childNodes.append(child)
+            }
+            return childNodes
+        }
         
         if children.isEmpty {
             maxNodeLevel = max(maxNodeLevel, currentNodeLevel)
@@ -322,6 +320,7 @@ struct PokemonDetailsView: View {
         )
     }
 }
+
 
 #Preview {
     PokemonDetailsView(pokemonId: 1).environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
