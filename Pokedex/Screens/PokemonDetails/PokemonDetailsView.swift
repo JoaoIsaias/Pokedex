@@ -29,158 +29,197 @@ struct PokemonDetailsView: View {
     @State var maxNodeLevel: Int = 1
     @State var maxNumberOfNodesInSameLevel: Int = 1
     
-    @State private var croppedImage: UIImage? = nil
-    
-    @State private var moveClicked: MoveWrapper?
+    @State var croppedImage: UIImage? = nil
     
     @StateObject private var viewModel = PokemonDetailsViewModel()
     
+    //The following variables are all used to help navigation with modals open/closed
+    //General
+    @State var nextPokemonId: Int = 0
+    @State var showNextPokemon: Bool = false
+    //Moves
+    @State var moveClicked: String = ""
+    @State var showMoveDetailsView: Bool = false
+    
     var body: some View {
-        ScrollView {
-            AsyncImage(url: URL(string: pokemonData?.image ?? "")) { result in
-                result.image?
-                    .resizable()
-                    .scaledToFill()
-            }
-            .frame(width: UIScreen.main.bounds.width * 0.8, height: UIScreen.main.bounds.width * 0.8)
-            .padding()
-            
-            HStack(alignment: .center) {
-                Text("#\(pokemonId.pokemonNumberString())")
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .padding()
+        NavigationStack {
+            ScrollView {
+                AsyncImage(url: URL(string: pokemonData?.image ?? "")) { result in
+                    result.image?
+                        .resizable()
+                        .scaledToFill()
+                }
+                .frame(width: UIScreen.main.bounds.width * 0.8, height: UIScreen.main.bounds.width * 0.8)
+                .padding()
                 
-                Text((pokemonData?.name ?? "").capitalized)
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .padding()
-            }
-            
-            if let pokemonDetails = pokemonDetails {
                 HStack(alignment: .center) {
-                    ForEach(pokemonDetails.types.indices, id: \.self) { typeIndex in
-                        Image(pokemonDetails.types[typeIndex].type.name)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 30)
-                            .padding()
-                    }
+                    Text("#\(pokemonId.pokemonNumberString())")
+                        .font(.title)
+                        .fontWeight(.bold)
+                        .padding()
+                    
+                    Text((pokemonData?.name ?? "").capitalized)
+                        .font(.title)
+                        .fontWeight(.bold)
+                        .padding()
                 }
                 
-                if let pokemonEvolutionNode = pokemonEvolutionNode {
-                    Text("Evolution Chain")
-                        .font(.title2)
-                        .bold()
-                        .padding()
-                    
-                    EvolutionView(
-                        pokemonDetailsId: pokemonId,
-                        node: pokemonEvolutionNode,
-                        maxNumberOfNodesVertically: maxNumberOfNodesInSameLevel,
-                        currentNumberOfNodesVertically: 1
-                    )
-                    .padding()
-                }
-
-                if let pokemonMovesByLevelUpArray = pokemonMovesMap[Constants.MoveLearnMethod.levelUp] {
-                    Text("Moves Learned by Level Up")
-                        .font(.title2)
-                        .bold()
-                        .padding()
-                    
-                    LazyVGrid(columns: [
-                        GridItem(.flexible(), spacing: 10),
-                        GridItem(.flexible(), spacing: 10)
-                    ]) {
-                        Text("Move")
-                            .font(.title3)
-                            .bold()
-                            .padding()
-                        Text("Learned at level")
-                            .font(.title3)
-                            .bold()
-                            .padding()
-                        ForEach(pokemonMovesByLevelUpArray, id: \.self) { move in
-                            Button {
-                                moveClicked = MoveWrapper(name: move.trimmingCharacters(in: .decimalDigits).capitalized)
-                            } label: {
-                                Text(move.trimmingCharacters(in: .decimalDigits).capitalized)
-                            }
-                            .padding()
-                            
-                            Text(String(Int(move.filter { $0.isNumber }) ?? 0))
+                if let pokemonDetails = pokemonDetails {
+                    HStack(alignment: .center) {
+                        ForEach(pokemonDetails.types.indices, id: \.self) { typeIndex in
+                            Image(pokemonDetails.types[typeIndex].type.name)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 30)
                                 .padding()
                         }
                     }
-                }
-                
-                if let pokemonMachineMovesArray = pokemonMovesMap[Constants.MoveLearnMethod.machine] {
-                    Text("Moves Learned by TM/HM")
-                        .font(.title2)
-                        .bold()
-                        .padding()
-                    LazyVStack {
-                        ForEach(pokemonMachineMovesArray, id: \.self) { move in
-                            Button {
-                                moveClicked = MoveWrapper(name: move)
-                            } label: {
-                                Text(move.capitalized)
-                            }
+                    
+                    if let pokemonEvolutionNode = pokemonEvolutionNode {
+                        Text("Evolution Chain")
+                            .font(.title2)
+                            .bold()
                             .padding()
+                        
+                        EvolutionView(
+                            pokemonDetailsId: pokemonId,
+                            node: pokemonEvolutionNode,
+                            maxNumberOfNodesVertically: maxNumberOfNodesInSameLevel,
+                            currentNumberOfNodesVertically: 1
+                        )
+                        .padding()
+                    }
+                    
+                    if let pokemonMovesByLevelUpArray = pokemonMovesMap[Constants.MoveLearnMethod.levelUp] {
+                        Text("Moves Learned by Level Up")
+                            .font(.title2)
+                            .bold()
+                            .padding()
+                        
+                        LazyVGrid(columns: [
+                            GridItem(.flexible(), spacing: 10),
+                            GridItem(.flexible(), spacing: 10)
+                        ]) {
+                            Text("Move")
+                                .font(.title3)
+                                .bold()
+                                .padding()
+                            Text("Learned at level")
+                                .font(.title3)
+                                .bold()
+                                .padding()
+                            ForEach(pokemonMovesByLevelUpArray, id: \.self) { move in
+                                Button {
+                                    moveClicked = move.trimmingCharacters(in: .decimalDigits).capitalized
+                                    showMoveDetailsView = true
+                                } label: {
+                                    Text(move.trimmingCharacters(in: .decimalDigits).capitalized)
+                                }
+                                .padding()
+                                
+                                Text(String(Int(move.filter { $0.isNumber }) ?? 0))
+                                    .padding()
+                            }
                         }
                     }
-                }
-                
-                if let pokemonTutorMovesArray = pokemonMovesMap[Constants.MoveLearnMethod.tutor] {
-                    Text("Tutor Moves")
-                        .font(.title2)
-                        .bold()
-                        .padding()
-                    LazyVStack {
-                        ForEach(pokemonTutorMovesArray, id: \.self) { move in
-                            Button {
-                                moveClicked = MoveWrapper(name: move)
-                            } label: {
-                                Text(move.capitalized)
-                            }
+                    
+                    if let pokemonMachineMovesArray = pokemonMovesMap[Constants.MoveLearnMethod.machine] {
+                        Text("Moves Learned by TM/HM")
+                            .font(.title2)
+                            .bold()
                             .padding()
+                        LazyVStack {
+                            ForEach(pokemonMachineMovesArray, id: \.self) { move in
+                                Button {
+                                    moveClicked = move
+                                    showMoveDetailsView = true
+                                } label: {
+                                    Text(move.capitalized)
+                                }
+                                .padding()
+                            }
                         }
                     }
-                }
-                
-                if let pokemonEggMovesArray = pokemonMovesMap[Constants.MoveLearnMethod.egg] {
-                    Text("Egg Moves")
-                        .font(.title2)
-                        .bold()
-                        .padding()
-                    LazyVStack {
-                        ForEach(pokemonEggMovesArray, id: \.self) { move in
-                            Button {
-                                moveClicked = MoveWrapper(name: move)
-                            } label: {
-                                Text(move.capitalized)
-                            }
+                    
+                    if let pokemonTutorMovesArray = pokemonMovesMap[Constants.MoveLearnMethod.tutor] {
+                        Text("Tutor Moves")
+                            .font(.title2)
+                            .bold()
                             .padding()
+                        LazyVStack {
+                            ForEach(pokemonTutorMovesArray, id: \.self) { move in
+                                Button {
+                                    moveClicked = move
+                                    showMoveDetailsView = true
+                                } label: {
+                                    Text(move.capitalized)
+                                }
+                                .padding()
+                            }
+                        }
+                    }
+                    
+                    if let pokemonEggMovesArray = pokemonMovesMap[Constants.MoveLearnMethod.egg] {
+                        Text("Egg Moves")
+                            .font(.title2)
+                            .bold()
+                            .padding()
+                        LazyVStack {
+                            ForEach(pokemonEggMovesArray, id: \.self) { move in
+                                Button {
+                                    moveClicked = move
+                                    showMoveDetailsView = true
+                                } label: {
+                                    Text(move.capitalized)
+                                }
+                                .padding()
+                            }
                         }
                     }
                 }
             }
-        }
-        .navigationTitle(pokemonData?.name?.capitalized ?? "")
-        .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            Task {
-                if pokemonData == nil {
-                    await loadPokemonData()
+            .navigationTitle(pokemonData?.name?.capitalized ?? "")
+            .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                if moveClicked != "" && nextPokemonId != 0 {
+                    nextPokemonId = 0
+                    showMoveDetailsView = true
                 }
-                if pokemonDetails == nil {
-                    await loadPokemonDetails()
+                showNextPokemon = false
+                Task {
+                    if pokemonData == nil {
+                        await loadPokemonData()
+                    }
+                    if pokemonDetails == nil {
+                        await loadPokemonDetails()
+                    }
                 }
             }
-        }
-        .sheet(item: $moveClicked) { move in
-            MovesDetailsView(moveName: move.name)
+            .sheet(isPresented: $showMoveDetailsView) {
+                MovesDetailsView(
+                    currentPokemonId: pokemonId,
+                    moveName: $moveClicked,
+                    nextPokemonId: $nextPokemonId,
+                    showView: $showMoveDetailsView
+                )
+            }
+            .onChange(of: nextPokemonId) {
+                if nextPokemonId != 0 {
+                    showNextPokemon = true
+                }
+            }
+            .background(
+                NavigationLink(
+                    destination: PokemonDetailsView(pokemonId: nextPokemonId),
+                    isActive: $showNextPokemon
+                ) {
+                    EmptyView()
+                }
+            )
+            .onDisappear() {
+                showMoveDetailsView = false
+                showNextPokemon = false
+            }
         }
     }
     
@@ -293,7 +332,7 @@ struct PokemonDetailsView: View {
         
         let children = await withTaskGroup(of: EvolutionNode.self) { group in
             for childChain in evolutionChain.evolvesTo {
-                group.async {
+                group.addTask {
                     await buildEvolutionTree(evolutionChain: childChain, evolvesFrom: pokemonName, currentNodeLevel: currentNodeLevel + 1)
                 }
             }
