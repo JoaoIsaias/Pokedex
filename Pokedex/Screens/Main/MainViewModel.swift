@@ -10,79 +10,54 @@ class MainViewModel: ObservableObject {
         self.apiClient = APIClient()
     }
     
-    func loadInitialPokemonList(context: NSManagedObjectContext, completion: @escaping (Result<[PokemonData], Error>) -> Void) {
+    func loadPokemonList(context: NSManagedObjectContext) async throws -> [PokemonData] {
         let fetchRequest: NSFetchRequest<PokemonData> = PokemonData.fetchRequest()
         fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \PokemonData.id, ascending: true)]
+        
         do {
             let coreDataPokemonList = try context.fetch(fetchRequest)
             if !coreDataPokemonList.isEmpty {
-                completion(.success(coreDataPokemonList))
-                return
+                return coreDataPokemonList
             } else {
-                // If not in CoreData, do API request
-                fetchPokemonList(context: context, url: Constants.pokemonListUrl, completion: completion)
+                // If not in CoreData, fetch from API
+                return try await fetchPokemonList(context: context, url: Constants.pokemonListUrl)
             }
         } catch {
-            print("Failed to fetch Pokemon List on CoreData: \(error.localizedDescription)")
-            completion(.failure(error))
-            return
+            print("Failed to fetch Pokémon List from CoreData: \(error.localizedDescription)")
+            throw error
         }
     }
     
-    func loadMorePokemonList(context: NSManagedObjectContext, pokemonListLength: Int = 0, completion: @escaping (Result<[PokemonData], Error>) -> Void) {
-        if let nextUrl = nextUrl {
-            fetchPokemonList(context: context, url: nextUrl, completion: completion)
-        } else {
-            let newUrl = "https://pokeapi.co/api/v2/pokemon?offset=\(String(pokemonListLength))&limit=20"
-            fetchPokemonList(context: context, url: newUrl, completion: completion)
-        }
-    }
-    
-    private func fetchPokemonList(context: NSManagedObjectContext, url: String, completion: @escaping (Result<[PokemonData], Error>) -> Void) {
-        apiClient.request(url, method: .get, parameters: nil) {
-            [weak self] (result: Result<PokemonList?, Error>) in
-            guard let self = self else { return }
-            switch result {
-            case .success(let data):
-                self.nextUrl = data?.next
-                var newPokemonList: [PokemonData] = []
-                let dispatchGroup = DispatchGroup()
-                
-                data?.results.forEach({ [weak self] pokemonRequest in
-                    guard let self = self else { return }
-                    dispatchGroup.enter()
-                    self.apiClient.request(pokemonRequest.url, method: .get, parameters: nil) {
-                        (result: Result<Pokemon?, Error>) in
-                        switch result {
-                        case .success(let pokemon):
-                            if let pokemonData = pokemon {
-                                let newPokemon = PokemonData(context: context)
-                                newPokemon.id = Int32(pokemonData.id)
-                                newPokemon.name = pokemonData.name
-                                newPokemon.image = pokemonData.sprites.frontDefault
-                                
-                                newPokemonList.append(newPokemon)
-                            }
-                        case .failure(let error):
-                            print("Error occurred obtaining \(pokemonRequest.name) data: \(error)")
-                        }
-                        dispatchGroup.leave()
-                    }
+    private func fetchPokemonList(context: NSManagedObjectContext, url: String) async throws -> [PokemonData] {
+        let result: PokemonList? = try await apiClient.request(url, method: .get, parameters: nil)
+        
+        guard let data = result else { throw NSError(domain: "No Data", code: -1) }
+        
+        self.nextUrl = data.next
+        var newPokemonList: [PokemonData] = []
+        
+        for pokemonRequest in data.results {
+            do {
+                let pokemonData: Pokemon? = try await apiClient.request(pokemonRequest.url, method: .get, parameters: nil)
+                if let pokemon = pokemonData {
+                    let newPokemon = PokemonData(context: context)
+                    newPokemon.id = Int16(pokemon.id)
+                    newPokemon.name = pokemon.name
+                    newPokemon.image = pokemon.sprites.frontDefault
                     
-                })
-                dispatchGroup.notify(queue: .main) {
-                    do {
-                        try context.save()
-                        completion(.success(newPokemonList))
-                    } catch {
-                        context.rollback()
-                        completion(.failure(error))
-                    }
+                    newPokemonList.append(newPokemon)
                 }
-            case .failure(let error):
-                print("Error occurred obtaining pokemon list data : \(error)")
-                completion(.failure(error))
+            } catch {
+                print("Error obtaining \(pokemonRequest.name) data: \(error)")
             }
+        }
+        
+        do {
+            try context.save()
+            return newPokemonList
+        } catch {
+            context.rollback()
+            throw error
         }
     }
 }
