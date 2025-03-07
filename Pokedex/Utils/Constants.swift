@@ -6,6 +6,7 @@ enum Constants {
     static let pokemonDetailsDefaultUrl: String = "https://pokeapi.co/api/v2/pokemon/"
     static let pokemonDefaultSpriteUrl: String = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/"
     static let pokemonDefaultMoveUrl: String = "https://pokeapi.co/api/v2/move/"
+    static let pokemonDefaultItemUrl: String = "https://pokeapi.co/api/v2/item/"
     
     enum MoveLearnMethod: String {
         case levelUp = "level-up"

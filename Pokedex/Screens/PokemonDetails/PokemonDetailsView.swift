@@ -110,7 +110,7 @@ struct PokemonDetailsView: View {
                                 .padding()
                             ForEach(pokemonMovesByLevelUpArray, id: \.self) { move in
                                 Button {
-                                    moveClicked = move.trimmingCharacters(in: .decimalDigits).capitalized
+                                    moveClicked = move.trimmingCharacters(in: .decimalDigits)
                                     showMoveDetailsView = true
                                 } label: {
                                     Text(move.trimmingCharacters(in: .decimalDigits).capitalized)

@@ -13,6 +13,9 @@ struct EvolutionView: View {
     @State var topSpacing: CGFloat = 0
     @State var maxHeight: CGFloat = 0  // Dynamic height for each node
     
+    @State var itemName: String = ""
+    @State var showItemDetailsView: Bool = false
+    
     private var pokemonImageView: some View {
         AsyncImage(url: URL(string: node.defaultSpriteUrl ?? "")) { result in
             switch result {
@@ -47,10 +50,21 @@ struct EvolutionView: View {
                                 .frame(width: 50, height: 10)
                                 .padding(.top, topSpacing+0.8*spriteSize/2)
                             
-                            Text("(\(method.1))")
-                                .font(.caption2)
-                                .foregroundColor(.gray)
-                                .frame(width: 50, height: textHeight)
+                            if method.0 == .useItem {
+                                Button {
+                                    itemName = method.1.replacingOccurrences(of: "Use ", with: "")
+                                    showItemDetailsView = true
+                                } label: {
+                                    Text("(\(method.1))")
+                                        .font(.caption2)
+                                        .frame(width: 50, height: textHeight)
+                                }
+                            } else {
+                                Text("(\(method.1))")
+                                    .font(.caption2)
+                                    .foregroundColor(.gray)
+                                    .frame(width: 50, height: textHeight)
+                            }
                             Spacer()
                         }
                         .frame(height: max(0,(maxHeight-(CGFloat(currentNumberOfNodesVertically)-1)*nodesSpacing)/CGFloat(currentNumberOfNodesVertically)))
@@ -90,6 +104,9 @@ struct EvolutionView: View {
             }
             .onAppear {
                 calculateSpacing()
+            }
+            .sheet(isPresented: $showItemDetailsView) {
+                ItemsDetailsView(itemName: $itemName)
             }
         }
     }
