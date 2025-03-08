@@ -227,7 +227,7 @@ struct PokemonDetailsView: View {
             await updateMovesMap()
             await getEvolutionChain()
         } catch {
-            print("Failed to load Pokémon details: \(error.localizedDescription)")
+            print("Failed to load Pokemon details: \(error.localizedDescription)")
         }
     }
     

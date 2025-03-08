@@ -4,26 +4,25 @@ import CoreData
 class MainViewModel: ObservableObject {
     
     private var apiClient: APIClientProtocol
+    private var pokemonDataService: PokemonDataServiceProtocol
     private var nextUrl: String?
     
-    init() {
-        self.apiClient = APIClient()
+    init(apiClient: APIClientProtocol = APIClient(), pokemonDataService: PokemonDataServiceProtocol = PokemonDataService()) {
+        self.apiClient = apiClient
+        self.pokemonDataService = pokemonDataService
     }
     
     func loadPokemonList(context: NSManagedObjectContext) async throws -> [PokemonData] {
-        let fetchRequest: NSFetchRequest<PokemonData> = PokemonData.fetchRequest()
-        fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \PokemonData.id, ascending: true)]
-        
         do {
-            let coreDataPokemonList = try context.fetch(fetchRequest)
-            if !coreDataPokemonList.isEmpty {
-                return coreDataPokemonList
+            let allPokemonList = try await pokemonDataService.fetchAllPokemon(context: context)
+            if !allPokemonList.isEmpty {
+                return allPokemonList
             } else {
                 // If not in CoreData, fetch from API
                 return try await fetchPokemonList(context: context, url: Constants.pokemonListUrl)
             }
         } catch {
-            print("Failed to fetch Pokémon List from CoreData: \(error.localizedDescription)")
+            print("Failed to fetch Pokemon List from CoreData: \(error.localizedDescription)")
             throw error
         }
     }
@@ -31,7 +30,7 @@ class MainViewModel: ObservableObject {
     private func fetchPokemonList(context: NSManagedObjectContext, url: String) async throws -> [PokemonData] {
         let result: PokemonList? = try await apiClient.request(url, method: .get, parameters: nil)
         
-        guard let data = result else { throw NSError(domain: "No Data", code: -1) }
+        guard let data = result else { throw DefaultError("No Data") }
         
         self.nextUrl = data.next
         var newPokemonList: [PokemonData] = []

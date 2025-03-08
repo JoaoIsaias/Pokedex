@@ -49,6 +49,7 @@ struct ItemsDetailsView: View {
                 itemDetailsUrl: Constants.pokemonDefaultItemUrl + itemName
             )
             setItemDescription()
+            await getPokemonsInEffectEntries(text: item?.effectEntries.first?.effect ?? "")
         } catch {
             print("Failed to load item \(itemName) details: \(error.localizedDescription)")
         }
@@ -59,6 +60,37 @@ struct ItemsDetailsView: View {
             .last(where: { $0.language?.name == "en" })?
             .text
             .replacingOccurrences(of: "\n", with: " ")
+    }
+    
+    private func getPokemonsInEffectEntries(text: String) async {
+        do {
+            let pokemonList = try await viewModel.findPokemonNames(in: text, context: viewContext)
+            
+            print(pokemonList)
+            
+//            for evolutionChain in evolutionsList {
+//                let firstPokemonSpriteUrl = ""
+//                let secondPokemonSpriteUrl = ""
+//                let evolutionNode = EvolutionNode(
+//                    species: evolutionChain.0,
+//                    defaultSpriteUrl: firstPokemonSpriteUrl,
+//                    evolutionMethod: nil,
+//                    evolvesFrom: nil,
+//                    evolvesTo: [
+//                        EvolutionNode(
+//                            species: evolutionChain.1,
+//                            defaultSpriteUrl: secondPokemonSpriteUrl,
+//                            evolutionMethod: nil,
+//                            evolvesFrom: evolutionChain.0,
+//                            evolvesTo: []
+//                        )
+//                    ]
+//                    
+//                )
+//            }
+        } catch {
+            print("Failed to load item \(itemName) details: \(error.localizedDescription)")
+        }
     }
 }
 
