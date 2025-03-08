@@ -1,20 +1,6 @@
 import SwiftUI
 import CoreData
 
-struct EvolutionNode: Identifiable {
-    let id = UUID()
-    let species: String
-    let defaultSpriteUrl: String?
-    let evolutionMethod: (Constants.EvolutionTrigger, String)?
-    let evolvesFrom: String?
-    let evolvesTo: [EvolutionNode]
-}
-
-struct MoveWrapper: Identifiable {
-    let id = UUID()
-    let name: String
-}
-
 struct PokemonDetailsView: View {
     @Environment(\.managedObjectContext) private var viewContext
     
@@ -309,7 +295,11 @@ struct PokemonDetailsView: View {
             switch evolutionTrigger {
             case .levelUp:
                 let minLevel = evolutionDetails.minLevel ?? 0
-                evolutionMethod = (evolutionTrigger, "Level " + String(minLevel))
+                var heldItemText = ""
+                if let itemName = evolutionDetails.heldItem?.name {
+                    heldItemText = " w/ " + itemName
+                }
+                evolutionMethod = (evolutionTrigger, "Level " + String(minLevel) + heldItemText)
             case .useItem:
                 let itemName = evolutionDetails.item?.name ?? ""
                 evolutionMethod = (evolutionTrigger, "Use " + String(itemName))

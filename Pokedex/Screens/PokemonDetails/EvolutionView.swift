@@ -59,6 +59,16 @@ struct EvolutionView: View {
                                         .font(.caption2)
                                         .frame(width: 50, height: textHeight)
                                 }
+                            } else if method.1.contains("w/"),
+                            let range = method.1.range(of: #"w/\s(.+)"#, options: .regularExpression) {
+                                Button {
+                                    itemName = String(method.1[range]).replacingOccurrences(of: "w/ ", with: "")
+                                    showItemDetailsView = true
+                                } label: {
+                                    Text("(\(method.1))")
+                                        .font(.caption2)
+                                        .frame(width: 50, height: textHeight)
+                                }
                             } else {
                                 Text("(\(method.1))")
                                     .font(.caption2)
