@@ -21,7 +21,7 @@ class MovesDetailsViewModel: ObservableObject {
             let pokemonList = try await pokemonDataService.fetchPokemonByListOfNames(context: context, pokemonNames: pokemonNames)
             return pokemonList
         } catch {
-            print("Failed to fetch Pokemon list from CoreData: \(error.localizedDescription)")
+            print("(thrown from function: \(#function)) -> Failed to fetch Pokemon list from CoreData: \(error.localizedDescription)")
             throw error
         }
     }

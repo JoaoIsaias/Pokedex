@@ -91,7 +91,7 @@ struct MainView: View {
             } catch {
                 DispatchQueue.main.async {
                     isLoading = false
-                    print("Failed to load Pokemon: \(error.localizedDescription)")
+                    print("(thrown from function: \(#function)) -> Failed to load Pokemon: \(error.localizedDescription)")
                 }
             }
         }

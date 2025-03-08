@@ -215,7 +215,7 @@ struct PokemonDetailsView: View {
             let pokemonDataResult = try await viewModel.fetchPokemonData(context: viewContext, pokemonId: pokemonId)
                 pokemonData = pokemonDataResult
         } catch {
-            print("Failed to fetch PokemonData on CoreData: \(error.localizedDescription)")
+            print("(thrown from function: \(#function)) -> Failed to fetch PokemonData on CoreData: \(error.localizedDescription)")
         }
     }
     
@@ -227,7 +227,7 @@ struct PokemonDetailsView: View {
             await updateMovesMap()
             await getEvolutionChain()
         } catch {
-            print("Failed to load Pokemon details: \(error.localizedDescription)")
+            print("(thrown from function: \(#function)) -> Failed to load Pokemon details: \(error.localizedDescription)")
         }
     }
     
@@ -280,7 +280,7 @@ struct PokemonDetailsView: View {
             pokemonEvolutionNode = await buildEvolutionTree(evolutionChain: evolutionChain.chain)
             //TODO: DECIDE HOW TO SAVE/SHOW INFORMATION
         } catch {
-            print("Failed to get evolution chain: \(error.localizedDescription)")
+            print("(thrown from function: \(#function)) -> Failed to get evolution chain: \(error.localizedDescription)")
         }
     }
     

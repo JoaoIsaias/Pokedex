@@ -49,9 +49,9 @@ struct ItemsDetailsView: View {
                 itemDetailsUrl: Constants.pokemonDefaultItemUrl + itemName
             )
             setItemDescription()
-            await getPokemonsInEffectEntries(text: item?.effectEntries.first?.effect ?? "")
+            try await setPokemonEvolutionsList(effectEntriesText: item?.effectEntries.first?.effect ?? "")
         } catch {
-            print("Failed to load item \(itemName) details: \(error.localizedDescription)")
+            print("(thrown from function: \(#function)) -> Failed to load item \(itemName) details: \(error.localizedDescription)")
         }
     }
     
@@ -62,34 +62,35 @@ struct ItemsDetailsView: View {
             .replacingOccurrences(of: "\n", with: " ")
     }
     
-    private func getPokemonsInEffectEntries(text: String) async {
+    private func setPokemonEvolutionsList(effectEntriesText: String) async throws {
+        do {
+            let pokemonList = try await getPokemonsInEffectEntries(text: effectEntriesText)
+            let evolutionsChainList = try await getEvolutionChainsInPokemonList(pokemonList: pokemonList)
+        } catch {
+            print("(thrown from function: \(#function)) -> Failed to get evolutions for \(itemName): \(error.localizedDescription)")
+            throw error
+        }
+    }
+    
+    
+    
+    private func getPokemonsInEffectEntries(text: String) async throws -> [String] {
         do {
             let pokemonList = try await viewModel.findPokemonNames(in: text, context: viewContext)
-            
-            print(pokemonList)
-            
-//            for evolutionChain in evolutionsList {
-//                let firstPokemonSpriteUrl = ""
-//                let secondPokemonSpriteUrl = ""
-//                let evolutionNode = EvolutionNode(
-//                    species: evolutionChain.0,
-//                    defaultSpriteUrl: firstPokemonSpriteUrl,
-//                    evolutionMethod: nil,
-//                    evolvesFrom: nil,
-//                    evolvesTo: [
-//                        EvolutionNode(
-//                            species: evolutionChain.1,
-//                            defaultSpriteUrl: secondPokemonSpriteUrl,
-//                            evolutionMethod: nil,
-//                            evolvesFrom: evolutionChain.0,
-//                            evolvesTo: []
-//                        )
-//                    ]
-//                    
-//                )
-//            }
+            return pokemonList
         } catch {
-            print("Failed to load item \(itemName) details: \(error.localizedDescription)")
+            print("(thrown from function: \(#function)) -> Failed to get Pokemon names in Effect Entries: \(error.localizedDescription)")
+            throw error
+        }
+    }
+    
+    private func getEvolutionChainsInPokemonList(pokemonList: [String]) async throws -> [EvolutionChain] {
+        do {
+            let pokemonEvolutionChainList = try await viewModel.findEvolutionChains(in: pokemonList, context: viewContext)
+            return pokemonEvolutionChainList
+        } catch {
+            print("(thrown from function: \(#function)) -> Failed to get Pokemon evolution chains in Pokemon list: \(error.localizedDescription)")
+            throw error
         }
     }
 }

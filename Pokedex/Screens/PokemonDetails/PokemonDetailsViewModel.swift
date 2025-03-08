@@ -16,7 +16,7 @@ class PokemonDetailsViewModel: ObservableObject {
             let pokemonData = try await pokemonDataService.fetchPokemonById(context: context, id: Int16(pokemonId))
             return pokemonData
         } catch {
-            print("No Pokemon found with ID \(pokemonId) in CoreData: \(error.localizedDescription)")
+            print("(thrown from function: \(#function)) -> No Pokemon found with ID \(pokemonId) in CoreData: \(error.localizedDescription)")
             throw error
         }
     }

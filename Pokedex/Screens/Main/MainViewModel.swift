@@ -22,7 +22,7 @@ class MainViewModel: ObservableObject {
                 return try await fetchPokemonList(context: context, url: Constants.pokemonListUrl)
             }
         } catch {
-            print("Failed to fetch Pokemon List from CoreData: \(error.localizedDescription)")
+            print("(thrown from function: \(#function)) -> Failed to fetch Pokemon List from CoreData: \(error.localizedDescription)")
             throw error
         }
     }

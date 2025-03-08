@@ -18,7 +18,7 @@ class PokemonDataService: PokemonDataServiceProtocol {
             let pokemonList = try context.fetch(fetchRequest)
             return pokemonList
         } catch {
-            print("Failed to fetch Pokemon list from CoreData: \(error.localizedDescription)")
+            print("(thrown from function: \(#function)) -> Failed to fetch Pokemon list from CoreData: \(error.localizedDescription)")
             throw error
         }
     }
@@ -32,7 +32,7 @@ class PokemonDataService: PokemonDataServiceProtocol {
             let result = try context.fetch(fetchRequest)
             return result.first
         } catch {
-            print("Failed to fetch Pokemon by ID from CoreData: \(error.localizedDescription)")
+            print("(thrown from function: \(#function)) -> Failed to fetch Pokemon by ID from CoreData: \(error.localizedDescription)")
             throw error
         }
     }
@@ -46,7 +46,7 @@ class PokemonDataService: PokemonDataServiceProtocol {
             let result = try context.fetch(fetchRequest)
             return result
         } catch {
-            print("Failed to fetch Pokemon by name from CoreData: \(error.localizedDescription)")
+            print("(thrown from function: \(#function)) -> Failed to fetch Pokemon by name from CoreData: \(error.localizedDescription)")
             throw error
         }
     }
@@ -60,7 +60,7 @@ class PokemonDataService: PokemonDataServiceProtocol {
             let result = try context.fetch(fetchRequest)
             return result
         } catch {
-            print("Failed to fetch Pokemon by image Url from CoreData: \(error.localizedDescription)")
+            print("(thrown from function: \(#function)) -> Failed to fetch Pokemon by image Url from CoreData: \(error.localizedDescription)")
             throw error
         }
     }
@@ -75,7 +75,7 @@ class PokemonDataService: PokemonDataServiceProtocol {
             let result = try context.fetch(fetchRequest)
             return result
         } catch {
-            print("Failed to fetch Pokemon list from CoreData: \(error.localizedDescription)")
+            print("(thrown from function: \(#function)) -> Failed to fetch Pokemon list from CoreData: \(error.localizedDescription)")
             throw error
         }
     }

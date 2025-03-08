@@ -154,7 +154,7 @@ struct MovesDetailsView: View {
             
             pokemonList = fetchedPokemonList
         } catch {
-            print("Failed to load move \(moveName) details: \(error.localizedDescription)")
+            print("(thrown from function: \(#function)) -> Failed to load move \(moveName) details: \(error.localizedDescription)")
         }
     }
     
