@@ -4,9 +4,9 @@ struct EvolutionDetail: Codable {
     let gender: Int?
     let heldItem: NamedAPIResource?
     let item: NamedAPIResource?
-    let knownMove: String?
-    let knownMoveType: String?
-    let location: String?
+    let knownMove: NamedAPIResource?
+    let knownMoveType: NamedAPIResource?
+    let location: NamedAPIResource?
     let minAffection: Int?
     let minBeauty: Int?
     let minHappiness: Int?

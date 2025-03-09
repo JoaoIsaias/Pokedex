@@ -288,7 +288,7 @@ struct PokemonDetailsView: View {
     func buildEvolutionTree(evolutionChain: EvolutionChainLink, evolvesFrom: String? = nil, currentNodeLevel: Int = 1) async -> EvolutionNode {
         var evolutionMethod: (Constants.EvolutionTrigger, String)? = nil
         
-        // TODO: Add the missing evolution method
+        // TODO: Add the missing evolution method + REFACTOR THIS HERE AND IN ITEMDETAILS
         if let evolutionDetails = evolutionChain.evolutionDetails.first,
            let evolutionTrigger = Constants.EvolutionTrigger(evolutionDetails.trigger.name) {
             

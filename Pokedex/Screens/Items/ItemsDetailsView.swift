@@ -10,34 +10,56 @@ struct ItemsDetailsView: View {
     
     @State var item: Item?
     @State var itemDescription: String?
+    @State var pokemonEvolutionNodeList: [EvolutionNode] = []
     
     @StateObject private var viewModel = ItemsDetailsViewModel()
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                Text(itemName.capitalized)
-                    .font(.title)
-                    .fontWeight(.bold)
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 0) {
+                    Text(itemName.capitalized)
+                        .font(.title)
+                        .fontWeight(.bold)
+                        .padding()
+                    
+                    AsyncImage(url: URL(string: item?.sprites.default ?? "")) { result in
+                        result.image?
+                            .resizable()
+                            .scaledToFill()
+                    }
+                    .frame(width: itemHeight, height: itemHeight)
                     .padding()
-                
-                AsyncImage(url: URL(string: item?.sprites.default ?? "")) { result in
-                    result.image?
-                        .resizable()
-                        .scaledToFill()
+                    
+                    Text("Description: \(itemDescription ?? "")")
+                        .font(.title3)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .multilineTextAlignment(.leading)
+                        .padding()
+                    
+                    if !pokemonEvolutionNodeList.isEmpty {
+                        Text("Pokemon that evolve with this item:")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .padding()
+                        
+                        LazyVStack(alignment: .leading) {
+                            ForEach(pokemonEvolutionNodeList.indices, id: \.self) { evolutionNodeIndex in
+                                EvolutionView(
+                                    pokemonDetailsId: 0, //Never equal to any pokemon
+                                    node: pokemonEvolutionNodeList[evolutionNodeIndex],
+                                    maxNumberOfNodesVertically: 1,
+                                    currentNumberOfNodesVertically: 1
+                                )
+                                .padding()
+                            }
+                        }
+                    }
                 }
-                .frame(width: itemHeight, height: itemHeight)
-                .padding()
-                
-                Text("Description: \(itemDescription ?? "")")
-                    .font(.title3)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .multilineTextAlignment(.leading)
-                    .padding()
             }
-        }
-        .task {
-            await loadItemDetails()
+            .task {
+                await loadItemDetails()
+            }
         }
     }
     
@@ -65,7 +87,7 @@ struct ItemsDetailsView: View {
     private func setPokemonEvolutionsList(effectEntriesText: String) async throws {
         do {
             let pokemonList = try await getPokemonsInEffectEntries(text: effectEntriesText)
-            let evolutionsChainList = try await getEvolutionChainsInPokemonList(pokemonList: pokemonList)
+            pokemonEvolutionNodeList = try await getEvolutionNodesInPokemonList(pokemonList: pokemonList)
         } catch {
             print("(thrown from function: \(#function)) -> Failed to get evolutions for \(itemName): \(error.localizedDescription)")
             throw error
@@ -84,9 +106,9 @@ struct ItemsDetailsView: View {
         }
     }
     
-    private func getEvolutionChainsInPokemonList(pokemonList: [String]) async throws -> [EvolutionChain] {
+    private func getEvolutionNodesInPokemonList(pokemonList: [String]) async throws -> [EvolutionNode] {
         do {
-            let pokemonEvolutionChainList = try await viewModel.findEvolutionChains(in: pokemonList, context: viewContext)
+            let pokemonEvolutionChainList = try await viewModel.getEvolutionNodes(in: pokemonList, context: viewContext)
             return pokemonEvolutionChainList
         } catch {
             print("(thrown from function: \(#function)) -> Failed to get Pokemon evolution chains in Pokemon list: \(error.localizedDescription)")
