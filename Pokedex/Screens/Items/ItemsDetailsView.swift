@@ -4,6 +4,7 @@ import CoreData
 struct ItemsDetailsView: View {
     @Environment(\.managedObjectContext) private var viewContext
     
+    let pokemonDetailsId: Int
     private let itemHeight: CGFloat = 75
     
     @Binding var itemName: String
@@ -46,10 +47,11 @@ struct ItemsDetailsView: View {
                         LazyVStack(alignment: .leading) {
                             ForEach(pokemonEvolutionNodeList.indices, id: \.self) { evolutionNodeIndex in
                                 EvolutionView(
-                                    pokemonDetailsId: 0, //Never equal to any pokemon
+                                    pokemonDetailsId: pokemonDetailsId,
                                     node: pokemonEvolutionNodeList[evolutionNodeIndex],
                                     maxNumberOfNodesVertically: 1,
-                                    currentNumberOfNodesVertically: 1
+                                    currentNumberOfNodesVertically: 1,
+                                    isInItemSheet: true
                                 )
                                 .padding()
                             }
@@ -119,6 +121,6 @@ struct ItemsDetailsView: View {
 
 #Preview {
     StatefulPreviewWrapper("water-stone") { binding in
-        ItemsDetailsView(itemName: binding).environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+        ItemsDetailsView(pokemonDetailsId:1, itemName: binding).environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
     }
 }

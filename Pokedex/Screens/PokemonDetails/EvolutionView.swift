@@ -15,6 +15,15 @@ struct EvolutionView: View {
     
     @State var itemName: String = ""
     @State var showItemDetailsView: Bool = false
+    let isInItemSheet: Bool
+    
+    init(pokemonDetailsId: Int, node: EvolutionNode, maxNumberOfNodesVertically: Int, currentNumberOfNodesVertically: Int, isInItemSheet: Bool = false) { //needed to add init to provide default value to isInItemSheet
+            self.pokemonDetailsId = pokemonDetailsId
+            self.node = node
+            self.maxNumberOfNodesVertically = maxNumberOfNodesVertically
+            self.currentNumberOfNodesVertically = currentNumberOfNodesVertically
+            self.isInItemSheet = isInItemSheet
+        }
     
     private var pokemonImageView: some View {
         AsyncImage(url: URL(string: node.defaultSpriteUrl ?? "")) { result in
@@ -35,8 +44,6 @@ struct EvolutionView: View {
                 EmptyView()
             }
         }
-        .background(RoundedRectangle(cornerRadius: 10).stroke(Color.gray, lineWidth: 1))
-        .padding(.top, topSpacing)
     }
 
     var body: some View {
@@ -49,8 +56,12 @@ struct EvolutionView: View {
                                 .resizable()
                                 .frame(width: 50, height: 10)
                                 .padding(.top, topSpacing+0.8*spriteSize/2)
-                            
-                            if method.0 == .useItem {
+                            if isInItemSheet == true {
+                                Text("(\(method.1))")
+                                    .font(.caption2)
+                                    .foregroundColor(.gray)
+                                    .frame(width: 50, height: textHeight)
+                            } else if method.0 == .useItem {
                                 Button {
                                     itemName = method.1.replacingOccurrences(of: "Use ", with: "")
                                     showItemDetailsView = true
@@ -84,8 +95,12 @@ struct EvolutionView: View {
                             NavigationLink(destination: PokemonDetailsView(pokemonId: pokemonId)) {
                                 pokemonImageView
                             }
+                            .background(RoundedRectangle(cornerRadius: 10).stroke(Color.blue, lineWidth: 1))
+                            .padding(.top, topSpacing)
                         } else {
                             pokemonImageView // Just display the image without navigation
+                            .background(RoundedRectangle(cornerRadius: 10).stroke(Color.gray, lineWidth: 1))
+                            .padding(.top, topSpacing)
                         }
                         
                         Text(node.species.capitalized)
@@ -106,7 +121,8 @@ struct EvolutionView: View {
                                 pokemonDetailsId: pokemonDetailsId,
                                 node: node.evolvesTo[childIndex],
                                 maxNumberOfNodesVertically: maxNumberOfNodesVertically,
-                                currentNumberOfNodesVertically: max(node.evolvesTo.count, currentNumberOfNodesVertically)
+                                currentNumberOfNodesVertically: max(node.evolvesTo.count, currentNumberOfNodesVertically),
+                                isInItemSheet: isInItemSheet
                             )
                         }
                     }
@@ -116,7 +132,7 @@ struct EvolutionView: View {
                 calculateSpacing()
             }
             .sheet(isPresented: $showItemDetailsView) {
-                ItemsDetailsView(itemName: $itemName)
+                ItemsDetailsView(pokemonDetailsId: pokemonDetailsId, itemName: $itemName)
             }
         }
     }
