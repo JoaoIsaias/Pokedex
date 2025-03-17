@@ -6,6 +6,8 @@ struct EvolutionView: View {
     let maxNumberOfNodesVertically: Int
     let currentNumberOfNodesVertically: Int // Helps positioning the node views vertically
     
+    let isInItemSheet: Bool
+    
     let spriteSize: CGFloat = 80
     let textHeight: CGFloat = 40
     let nodesSpacing: CGFloat = 10
@@ -13,17 +15,9 @@ struct EvolutionView: View {
     @State var topSpacing: CGFloat = 0
     @State var maxHeight: CGFloat = 0  // Dynamic height for each node
     
-    @State var itemName: String = ""
-    @State var showItemDetailsView: Bool = false
-    let isInItemSheet: Bool
-    
-    init(pokemonDetailsId: Int, node: EvolutionNode, maxNumberOfNodesVertically: Int, currentNumberOfNodesVertically: Int, isInItemSheet: Bool = false) { //needed to add init to provide default value to isInItemSheet
-            self.pokemonDetailsId = pokemonDetailsId
-            self.node = node
-            self.maxNumberOfNodesVertically = maxNumberOfNodesVertically
-            self.currentNumberOfNodesVertically = currentNumberOfNodesVertically
-            self.isInItemSheet = isInItemSheet
-        }
+    @Binding var itemName: String
+    @Binding var nextPokemonId: Int
+    @Binding var showItemDetailsView: Bool
     
     private var pokemonImageView: some View {
         AsyncImage(url: URL(string: node.defaultSpriteUrl ?? "")) { result in
@@ -92,7 +86,10 @@ struct EvolutionView: View {
                     }
                     VStack(alignment: .center, spacing: 5) {
                         if let pokemonId = getPokemonIdFromSpriteUrl(), pokemonId != pokemonDetailsId {
-                            NavigationLink(destination: PokemonDetailsView(pokemonId: pokemonId)) {
+                            Button {
+                                showItemDetailsView = false
+                                nextPokemonId = pokemonId
+                            } label: {
                                 pokemonImageView
                             }
                             .background(RoundedRectangle(cornerRadius: 10).stroke(Color.blue, lineWidth: 1))
@@ -122,7 +119,10 @@ struct EvolutionView: View {
                                 node: node.evolvesTo[childIndex],
                                 maxNumberOfNodesVertically: maxNumberOfNodesVertically,
                                 currentNumberOfNodesVertically: max(node.evolvesTo.count, currentNumberOfNodesVertically),
-                                isInItemSheet: isInItemSheet
+                                isInItemSheet: isInItemSheet,
+                                itemName: $itemName,
+                                nextPokemonId: $nextPokemonId,
+                                showItemDetailsView: $showItemDetailsView
                             )
                         }
                     }
@@ -131,8 +131,8 @@ struct EvolutionView: View {
             .onAppear {
                 calculateSpacing()
             }
-            .sheet(isPresented: $showItemDetailsView) {
-                ItemsDetailsView(pokemonDetailsId: pokemonDetailsId, itemName: $itemName)
+            .sheet(isPresented: isInItemSheet ? .constant(false) : $showItemDetailsView) {
+                ItemsDetailsView(currentPokemonId: pokemonDetailsId, itemName: $itemName, nextPokemonId: $nextPokemonId, showView: $showItemDetailsView)
             }
         }
     }
@@ -155,16 +155,22 @@ struct EvolutionView: View {
 }
 
 #Preview {
-    EvolutionView(
-        pokemonDetailsId: 1,
-        node: EvolutionNode(
-            species: "Bulbasaur",
-            defaultSpriteUrl: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png",
-            evolutionMethod: nil,
-            evolvesFrom: nil,
-            evolvesTo: []
-        ),
-        maxNumberOfNodesVertically: 1,
-        currentNumberOfNodesVertically: 1
-    )
+    StatefulPreviewWrapper(("water-stone", 2, false)) { binding in
+        EvolutionView(
+            pokemonDetailsId: 1,
+            node: EvolutionNode(
+                species: "Bulbasaur",
+                defaultSpriteUrl: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png",
+                evolutionMethod: nil,
+                evolvesFrom: nil,
+                evolvesTo: []
+            ),
+            maxNumberOfNodesVertically: 1,
+            currentNumberOfNodesVertically: 1,
+            isInItemSheet: false,
+            itemName: binding.0,
+            nextPokemonId: binding.1,
+            showItemDetailsView: binding.2
+        )
+    }
 }

@@ -60,6 +60,10 @@ class ItemsDetailsViewModel: ObservableObject {
                 let id2 = pokemonIdDict[pair.1.lowercased()] ?? Int.max
 
                 return id1 < id2 ? pair : (pair.1, pair.0)  // Ensure the smaller ID is first
+            }.sorted {
+                let firstId1 = pokemonIdDict[$0.0.lowercased()] ?? Int.max
+                let firstId2 = pokemonIdDict[$1.0.lowercased()] ?? Int.max
+                return firstId1 < firstId2
             }
             
             // Step 4: Create the evolution node for each pair

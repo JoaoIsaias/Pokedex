@@ -4,10 +4,12 @@ import CoreData
 struct ItemsDetailsView: View {
     @Environment(\.managedObjectContext) private var viewContext
     
-    let pokemonDetailsId: Int
     private let itemHeight: CGFloat = 75
     
+    let currentPokemonId: Int
     @Binding var itemName: String
+    @Binding var nextPokemonId: Int
+    @Binding var showView: Bool
     
     @State var item: Item?
     @State var itemDescription: String?
@@ -44,18 +46,22 @@ struct ItemsDetailsView: View {
                             .fontWeight(.bold)
                             .padding()
                         
-                        LazyVStack(alignment: .leading) {
+                        LazyVStack(alignment: .center) {
                             ForEach(pokemonEvolutionNodeList.indices, id: \.self) { evolutionNodeIndex in
                                 EvolutionView(
-                                    pokemonDetailsId: pokemonDetailsId,
+                                    pokemonDetailsId: currentPokemonId,
                                     node: pokemonEvolutionNodeList[evolutionNodeIndex],
                                     maxNumberOfNodesVertically: 1,
                                     currentNumberOfNodesVertically: 1,
-                                    isInItemSheet: true
+                                    isInItemSheet: true,
+                                    itemName: $itemName,
+                                    nextPokemonId: $nextPokemonId,
+                                    showItemDetailsView: $showView
                                 )
-                                .padding()
+                                Divider()
                             }
                         }
+                        .padding()
                     }
                 }
             }
@@ -120,7 +126,7 @@ struct ItemsDetailsView: View {
 }
 
 #Preview {
-    StatefulPreviewWrapper("water-stone") { binding in
-        ItemsDetailsView(pokemonDetailsId:1, itemName: binding).environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+    StatefulPreviewWrapper(("water-stone", 2, false)) { binding in
+        ItemsDetailsView(currentPokemonId: 1, itemName: binding.0, nextPokemonId: binding.1, showView: binding.2).environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
     }
 }

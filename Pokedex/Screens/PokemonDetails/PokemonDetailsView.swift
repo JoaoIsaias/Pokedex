@@ -26,6 +26,10 @@ struct PokemonDetailsView: View {
     //Moves
     @State var moveClicked: String = ""
     @State var showMoveDetailsView: Bool = false
+    @State var scrollMovesPokemonListToIndex: Int = 0
+    //Items
+    @State var itemClicked: String = ""
+    @State var showItemDetailsView: Bool = false
     
     var body: some View {
         NavigationStack {
@@ -71,7 +75,11 @@ struct PokemonDetailsView: View {
                             pokemonDetailsId: pokemonId,
                             node: pokemonEvolutionNode,
                             maxNumberOfNodesVertically: maxNumberOfNodesInSameLevel,
-                            currentNumberOfNodesVertically: 1
+                            currentNumberOfNodesVertically: 1,
+                            isInItemSheet: false,
+                            itemName: $itemClicked,
+                            nextPokemonId: $nextPokemonId,
+                            showItemDetailsView: $showItemDetailsView
                         )
                         .padding()
                     }
@@ -97,6 +105,7 @@ struct PokemonDetailsView: View {
                             ForEach(pokemonMovesByLevelUpArray, id: \.self) { move in
                                 Button {
                                     moveClicked = move.trimmingCharacters(in: .decimalDigits)
+                                    scrollMovesPokemonListToIndex = 0
                                     showMoveDetailsView = true
                                 } label: {
                                     Text(move.trimmingCharacters(in: .decimalDigits).capitalized)
@@ -118,6 +127,7 @@ struct PokemonDetailsView: View {
                             ForEach(pokemonMachineMovesArray, id: \.self) { move in
                                 Button {
                                     moveClicked = move
+                                    scrollMovesPokemonListToIndex = 0
                                     showMoveDetailsView = true
                                 } label: {
                                     Text(move.capitalized)
@@ -136,6 +146,7 @@ struct PokemonDetailsView: View {
                             ForEach(pokemonTutorMovesArray, id: \.self) { move in
                                 Button {
                                     moveClicked = move
+                                    scrollMovesPokemonListToIndex = 0
                                     showMoveDetailsView = true
                                 } label: {
                                     Text(move.capitalized)
@@ -154,6 +165,7 @@ struct PokemonDetailsView: View {
                             ForEach(pokemonEggMovesArray, id: \.self) { move in
                                 Button {
                                     moveClicked = move
+                                    scrollMovesPokemonListToIndex = 0
                                     showMoveDetailsView = true
                                 } label: {
                                     Text(move.capitalized)
@@ -167,9 +179,14 @@ struct PokemonDetailsView: View {
             .navigationTitle(pokemonData?.name?.capitalized ?? "")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
-                if moveClicked != "" && nextPokemonId != 0 {
-                    nextPokemonId = 0
-                    showMoveDetailsView = true
+                if nextPokemonId != 0 {
+                    if moveClicked != "" {
+                        nextPokemonId = 0
+                        showMoveDetailsView = true
+                    } else if itemClicked != "" {
+                        nextPokemonId = 0
+                        showItemDetailsView = true
+                    }
                 }
                 showNextPokemon = false
                 Task {
@@ -186,7 +203,8 @@ struct PokemonDetailsView: View {
                     currentPokemonId: pokemonId,
                     moveName: $moveClicked,
                     nextPokemonId: $nextPokemonId,
-                    showView: $showMoveDetailsView
+                    showView: $showMoveDetailsView,
+                    scrollToIndex: $scrollMovesPokemonListToIndex
                 )
             }
             .onChange(of: nextPokemonId) {
@@ -203,8 +221,9 @@ struct PokemonDetailsView: View {
                 }
             )
             .onDisappear() {
-                showMoveDetailsView = false
                 showNextPokemon = false
+                showMoveDetailsView = false
+                showItemDetailsView = false
             }
         }
     }
