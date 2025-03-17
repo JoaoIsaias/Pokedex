@@ -18,7 +18,7 @@ struct MainView: View {
             if isLoading {
                 VStack {
                     Spacer()
-                    Text("Loading Pokémon list...")
+                    Text("Loading Pokemon list...")
                         .font(.title)
                         .padding()
                     ProgressView()
@@ -91,7 +91,7 @@ struct MainView: View {
             } catch {
                 DispatchQueue.main.async {
                     isLoading = false
-                    print("Failed to load Pokémon: \(error.localizedDescription)")
+                    print("(thrown from function: \(#function)) -> Failed to load Pokemon: \(error.localizedDescription)")
                 }
             }
         }

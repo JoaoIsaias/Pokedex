@@ -1,20 +1,6 @@
 import SwiftUI
 import CoreData
 
-struct EvolutionNode: Identifiable {
-    let id = UUID()
-    let species: String
-    let defaultSpriteUrl: String?
-    let evolutionMethod: (Constants.EvolutionTrigger, String)?
-    let evolvesFrom: String?
-    let evolvesTo: [EvolutionNode]
-}
-
-struct MoveWrapper: Identifiable {
-    let id = UUID()
-    let name: String
-}
-
 struct PokemonDetailsView: View {
     @Environment(\.managedObjectContext) private var viewContext
     
@@ -40,6 +26,10 @@ struct PokemonDetailsView: View {
     //Moves
     @State var moveClicked: String = ""
     @State var showMoveDetailsView: Bool = false
+    @State var scrollMovesPokemonListToIndex: Int = 0
+    //Items
+    @State var itemClicked: String = ""
+    @State var showItemDetailsView: Bool = false
     
     var body: some View {
         NavigationStack {
@@ -85,7 +75,11 @@ struct PokemonDetailsView: View {
                             pokemonDetailsId: pokemonId,
                             node: pokemonEvolutionNode,
                             maxNumberOfNodesVertically: maxNumberOfNodesInSameLevel,
-                            currentNumberOfNodesVertically: 1
+                            currentNumberOfNodesVertically: 1,
+                            isInItemSheet: false,
+                            itemName: $itemClicked,
+                            nextPokemonId: $nextPokemonId,
+                            showItemDetailsView: $showItemDetailsView
                         )
                         .padding()
                     }
@@ -110,7 +104,8 @@ struct PokemonDetailsView: View {
                                 .padding()
                             ForEach(pokemonMovesByLevelUpArray, id: \.self) { move in
                                 Button {
-                                    moveClicked = move.trimmingCharacters(in: .decimalDigits).capitalized
+                                    moveClicked = move.trimmingCharacters(in: .decimalDigits)
+                                    scrollMovesPokemonListToIndex = 0
                                     showMoveDetailsView = true
                                 } label: {
                                     Text(move.trimmingCharacters(in: .decimalDigits).capitalized)
@@ -132,6 +127,7 @@ struct PokemonDetailsView: View {
                             ForEach(pokemonMachineMovesArray, id: \.self) { move in
                                 Button {
                                     moveClicked = move
+                                    scrollMovesPokemonListToIndex = 0
                                     showMoveDetailsView = true
                                 } label: {
                                     Text(move.capitalized)
@@ -150,6 +146,7 @@ struct PokemonDetailsView: View {
                             ForEach(pokemonTutorMovesArray, id: \.self) { move in
                                 Button {
                                     moveClicked = move
+                                    scrollMovesPokemonListToIndex = 0
                                     showMoveDetailsView = true
                                 } label: {
                                     Text(move.capitalized)
@@ -168,6 +165,7 @@ struct PokemonDetailsView: View {
                             ForEach(pokemonEggMovesArray, id: \.self) { move in
                                 Button {
                                     moveClicked = move
+                                    scrollMovesPokemonListToIndex = 0
                                     showMoveDetailsView = true
                                 } label: {
                                     Text(move.capitalized)
@@ -181,9 +179,14 @@ struct PokemonDetailsView: View {
             .navigationTitle(pokemonData?.name?.capitalized ?? "")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
-                if moveClicked != "" && nextPokemonId != 0 {
-                    nextPokemonId = 0
-                    showMoveDetailsView = true
+                if nextPokemonId != 0 {
+                    if moveClicked != "" {
+                        nextPokemonId = 0
+                        showMoveDetailsView = true
+                    } else if itemClicked != "" {
+                        nextPokemonId = 0
+                        showItemDetailsView = true
+                    }
                 }
                 showNextPokemon = false
                 Task {
@@ -200,7 +203,8 @@ struct PokemonDetailsView: View {
                     currentPokemonId: pokemonId,
                     moveName: $moveClicked,
                     nextPokemonId: $nextPokemonId,
-                    showView: $showMoveDetailsView
+                    showView: $showMoveDetailsView,
+                    scrollToIndex: $scrollMovesPokemonListToIndex
                 )
             }
             .onChange(of: nextPokemonId) {
@@ -217,8 +221,9 @@ struct PokemonDetailsView: View {
                 }
             )
             .onDisappear() {
-                showMoveDetailsView = false
                 showNextPokemon = false
+                showMoveDetailsView = false
+                showItemDetailsView = false
             }
         }
     }
@@ -229,7 +234,7 @@ struct PokemonDetailsView: View {
             let pokemonDataResult = try await viewModel.fetchPokemonData(context: viewContext, pokemonId: pokemonId)
                 pokemonData = pokemonDataResult
         } catch {
-            print("Failed to fetch PokemonData on CoreData: \(error.localizedDescription)")
+            print("(thrown from function: \(#function)) -> Failed to fetch PokemonData on CoreData: \(error.localizedDescription)")
         }
     }
     
@@ -241,7 +246,7 @@ struct PokemonDetailsView: View {
             await updateMovesMap()
             await getEvolutionChain()
         } catch {
-            print("Failed to load Pokémon details: \(error.localizedDescription)")
+            print("(thrown from function: \(#function)) -> Failed to load Pokemon details: \(error.localizedDescription)")
         }
     }
     
@@ -294,7 +299,7 @@ struct PokemonDetailsView: View {
             pokemonEvolutionNode = await buildEvolutionTree(evolutionChain: evolutionChain.chain)
             //TODO: DECIDE HOW TO SAVE/SHOW INFORMATION
         } catch {
-            print("Failed to get evolution chain: \(error.localizedDescription)")
+            print("(thrown from function: \(#function)) -> Failed to get evolution chain: \(error.localizedDescription)")
         }
     }
     
@@ -302,14 +307,18 @@ struct PokemonDetailsView: View {
     func buildEvolutionTree(evolutionChain: EvolutionChainLink, evolvesFrom: String? = nil, currentNodeLevel: Int = 1) async -> EvolutionNode {
         var evolutionMethod: (Constants.EvolutionTrigger, String)? = nil
         
-        // TODO: Add the missing evolution method
+        // TODO: Add the missing evolution method + REFACTOR THIS HERE AND IN ITEMDETAILS
         if let evolutionDetails = evolutionChain.evolutionDetails.first,
            let evolutionTrigger = Constants.EvolutionTrigger(evolutionDetails.trigger.name) {
             
             switch evolutionTrigger {
             case .levelUp:
                 let minLevel = evolutionDetails.minLevel ?? 0
-                evolutionMethod = (evolutionTrigger, "Level " + String(minLevel))
+                var heldItemText = ""
+                if let itemName = evolutionDetails.heldItem?.name {
+                    heldItemText = " w/ " + itemName
+                }
+                evolutionMethod = (evolutionTrigger, "Level " + String(minLevel) + heldItemText)
             case .useItem:
                 let itemName = evolutionDetails.item?.name ?? ""
                 evolutionMethod = (evolutionTrigger, "Use " + String(itemName))
