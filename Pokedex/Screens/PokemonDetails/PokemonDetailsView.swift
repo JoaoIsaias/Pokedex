@@ -9,13 +9,12 @@ struct PokemonDetailsView: View {
     @State var pokemonData: PokemonData?
     @State var pokemonDetails: Pokemon?
     
+    @State var pokemonSpritesUrlArray: [String?] = []
     @State var pokemonMovesMap: [Constants.MoveLearnMethod: [String]] = [:]
     
     @State var pokemonEvolutionNode: EvolutionNode?
     @State var maxNodeLevel: Int = 1
     @State var maxNumberOfNodesInSameLevel: Int = 1
-    
-    @State var croppedImage: UIImage? = nil
     
     @StateObject private var viewModel = PokemonDetailsViewModel()
     
@@ -34,13 +33,32 @@ struct PokemonDetailsView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                AsyncImage(url: URL(string: pokemonData?.image ?? "")) { result in
-                    result.image?
-                        .resizable()
-                        .scaledToFill()
+                
+                ScrollView(.horizontal, showsIndicators: true) {
+                    HStack(spacing: 0) {
+                        ForEach(pokemonSpritesUrlArray.indices, id: \.self) { index in
+                            AsyncImage(url: URL(string: pokemonSpritesUrlArray[index] ?? "")) { result in
+                                result.image?
+                                    .resizable()
+                                    .scaledToFill()
+                            }
+                            .shadow(radius: 5, x: 5, y: 5)
+                            .frame(width: UIScreen.main.bounds.width * 0.8, height: UIScreen.main.bounds.width * 0.8)
+                            .background(RoundedRectangle(cornerRadius: 10).stroke(Color.gray, lineWidth: 1))
+                            .scrollTransition { content, phase in
+                                content
+                                    .opacity(phase.isIdentity ? 1 : 0.5) // Apply opacity animation
+                                    .scaleEffect(y: phase.isIdentity ? 1 : 0.7) // Apply scale animation
+                            }
+                            .padding()
+                        }
+                    }
+                    .scrollTargetLayout() // Align content to the view
                 }
-                .frame(width: UIScreen.main.bounds.width * 0.8, height: UIScreen.main.bounds.width * 0.8)
-                .padding()
+                .contentMargins(20, for: .scrollContent) // Add padding
+                .scrollTargetBehavior(.viewAligned)
+                .scrollIndicators(.visible)
+                
                 
                 HStack(alignment: .center) {
                     Text("#\(pokemonId.pokemonNumberString())")
@@ -243,6 +261,7 @@ struct PokemonDetailsView: View {
         do {
             let pokemonDetailsResult = try await viewModel.loadPokemonDetails(context: viewContext, pokemonDetailsUrl: Constants.pokemonDetailsDefaultUrl + String(pokemonId))
             pokemonDetails = pokemonDetailsResult
+            pokemonSpritesUrlArray = [pokemonData?.image, pokemonDetailsResult.sprites.frontShiny]
             await updateMovesMap()
             await getEvolutionChain()
         } catch {
