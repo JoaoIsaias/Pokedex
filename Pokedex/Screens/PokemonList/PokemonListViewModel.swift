@@ -1,7 +1,7 @@
 import Foundation
 import CoreData
 
-class MainViewModel: ObservableObject {
+class PokemonListViewModel: ObservableObject {
     
     private var apiClient: APIClientProtocol
     private var pokemonDataService: PokemonDataServiceProtocol
